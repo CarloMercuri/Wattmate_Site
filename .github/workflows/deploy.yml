@@ -1,0 +1,40 @@
+name: Build and Deploy to IIS
+
+on:
+  push:
+    branches:
+      - production # or whatever branch you want
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Publish
+        run: dotnet publish -c Release -r win-x64 --self-contained true -o ./publish_output
+
+      - name: Deploy to IIS via Web Deploy
+        run: |
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+            -source:contentPath="publish_output" `
+            -dest:contentPath="${{ secrets.DEPLOY_SITE_NAME }}", `
+                  computerName="https://${{ secrets.DEPLOY_SERVER }}:8172/msdeploy.axd?site=${{ secrets.DEPLOY_SITE_NAME }}", `
+                  userName="${{ secrets.DEPLOY_USER }}", `
+                  password="${{ secrets.DEPLOY_PASSWORD }}", `
+                  authType="Basic" `
+            -verb:sync `
+            -allowUntrusted
