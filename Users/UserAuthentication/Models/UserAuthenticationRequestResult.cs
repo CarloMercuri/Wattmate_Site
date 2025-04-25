@@ -1,4 +1,4 @@
-﻿namespace Wattmate_Site.UserAuthentication.Models
+﻿namespace Wattmate_Site.Users.UserAuthentication.Models
 {
     public class UserAuthenticationRequestResult
     {

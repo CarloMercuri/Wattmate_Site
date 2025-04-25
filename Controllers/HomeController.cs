@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using Wattmate_Site.Controllers.Attributes;
 using Wattmate_Site.Models;
-using Wattmate_Site.UserAuthentication.Extensions;
-using Wattmate_Site.UserAuthentication.Interfaces;
-using Wattmate_Site.UserAuthentication.Models;
+using Wattmate_Site.Users.UserAuthentication.Extensions;
+using Wattmate_Site.Users.UserAuthentication.Interfaces;
+using Wattmate_Site.Users.UserAuthentication.Models;
 
 namespace Wattmate_Site.Controllers
 {
@@ -59,7 +59,23 @@ namespace Wattmate_Site.Controllers
         [HttpPost]
         public IActionResult CreateNewUser([FromBody] UserLoginData data)
         {
-            return Ok();
+            try
+            {
+                UserCreationRequestResult result = _authProcessor.CreateNewUser(data);
+                if (result.Success)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest(result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error();
+            }
+          
         }
 
 

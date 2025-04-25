@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Reflection;
 using Wattmate_Site.Controllers.Attributes;
-using Wattmate_Site.UserAuthentication.Extensions;
-using Wattmate_Site.UserAuthentication.Models;
+using Wattmate_Site.Users.UserAuthentication.Extensions;
+using Wattmate_Site.Users.UserAuthentication.Models;
 
 namespace Wattmate_Site.Controllers
 {

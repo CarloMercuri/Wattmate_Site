@@ -1,13 +1,13 @@
 ﻿using System.Text.Json;
-using Wattmate_Site.UserAuthentication.Models;
+using Wattmate_Site.Users.UserAuthentication.Models;
 
-namespace Wattmate_Site.UserAuthentication.Extensions
+namespace Wattmate_Site.Users.UserAuthentication.Extensions
 {
     public static class SessionExtensions
     {
         public static void SetUserData(this ISession session, AuthenticatedUserData? _userData)
         {
-            if(_userData is null)
+            if (_userData is null)
             {
                 session.Remove("UserEmail");
                 return;

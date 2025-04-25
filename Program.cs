@@ -1,7 +1,7 @@
 using Wattmate_Site;
 using Wattmate_Site.DataProcessing.Interfaces;
-using Wattmate_Site.UserAuthentication.Interfaces;
-using Wattmate_Site.UserAuthentication.Processors;
+using Wattmate_Site.Users.UserAuthentication.Interfaces;
+using Wattmate_Site.Users.UserAuthentication.Processors;
 
 var builder = WebApplication.CreateBuilder(args);
 
