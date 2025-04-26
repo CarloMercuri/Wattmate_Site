@@ -15,11 +15,13 @@ namespace Wattmate_Site.Security.Encryption
             NewPasswordHashResult re = new NewPasswordHashResult();
             try
             {
-                byte[] salt = CreateNewSalt();
-                re.Salt = Convert.ToHexString(salt);
-                re.HashedPassword = HashPassword(password, salt, _defaultIterations);
-                re.Iterations = _defaultIterations;
+                re.PasswordData = new PasswordHashData();
 
+                byte[] salt = CreateNewSalt();
+                re.PasswordData.Salt = Convert.ToHexString(salt);
+                re.PasswordData.HashedPassword = HashPassword(password, salt, _defaultIterations);
+                re.PasswordData.Iterations = _defaultIterations;
+                re.PasswordData.Algorithm = "PBKDF2";
                 re.Success = true;
                 return re;
             }

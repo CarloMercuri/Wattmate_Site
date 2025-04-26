@@ -8,5 +8,15 @@ namespace Wattmate_Site.Users.UserAuthentication
         {
             return new Pbkdf2PasswordProcessor();
         }
+
+        public static IPasswordProcessor GetAppropriatePasswordProcessor(string algorithm)
+        {
+            switch (algorithm)
+            {
+                case "PBKDF2":
+                    return new Pbkdf2PasswordProcessor();
+                default: return null;
+            }
+        }
     }
 }

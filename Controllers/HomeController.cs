@@ -35,7 +35,7 @@ namespace Wattmate_Site.Controllers
             UserAuthenticationRequestResult result = _authProcessor.AuthenticateUser(_userData.UserEmail, _userData.UserPassword);
             if (result.Success)
             {
-                HttpContext.Session.SetUserData(result.AuthenticatedUserData);
+                HttpContext.Session.SetUserData(result.UserData);
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -43,7 +43,21 @@ namespace Wattmate_Site.Controllers
                 UserLoginData _status = new UserLoginData();
                 _status.ErrorMessage = result.Message;
                 TempData["errorMessage"] = result.Message;
-                return RedirectToAction("Login", "Home");
+                return RedirectToAction("Login", "Home", result);
+            }
+        }
+
+        [HttpPost]
+        public IActionResult LoginApi([FromBody]UserLoginData _userData)
+        {
+            UserAuthenticationRequestResult result = _authProcessor.AuthenticateUser(_userData.UserEmail, _userData.UserPassword);
+            if (result.Success)
+            {
+                return Json(result.UserData);
+            }
+            else
+            {
+                return Unauthorized();
             }
         }
 
@@ -64,7 +78,7 @@ namespace Wattmate_Site.Controllers
                 UserCreationRequestResult result = _authProcessor.CreateNewUser(data);
                 if (result.Success)
                 {
-                    return Ok();
+                    return Ok("User created.");
                 }
                 else
                 {

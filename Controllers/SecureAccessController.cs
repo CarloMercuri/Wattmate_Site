@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Reflection;
 using Wattmate_Site.Controllers.Attributes;
+using Wattmate_Site.DataModels;
 using Wattmate_Site.Users.UserAuthentication.Extensions;
 using Wattmate_Site.Users.UserAuthentication.Models;
 
@@ -15,7 +16,7 @@ namespace Wattmate_Site.Controllers
             var actionName = ((ControllerBase)context.Controller).ControllerContext.ActionDescriptor.ActionName;
             var action = controllerType.GetMethod(actionName);
 
-            AuthenticatedUserData? _authenticatedUser = HttpContext.Session.GetUserData();
+            UserModel? _authenticatedUser = HttpContext.Session.GetUserData();
 
             AuthenticationRequiredAttribute _authRequired = (AuthenticationRequiredAttribute)action.GetCustomAttribute(typeof(AuthenticationRequiredAttribute), true);
 

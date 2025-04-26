@@ -59,26 +59,29 @@ namespace Wattmate_Site.Users.Database
             }
 
         }
-        
-        public bool InsertNewUser(UserModel model)
-        {
-            try
-            {
-                DatabaseQueryResponse resp =_connection.CallStoredProcedure("CreateUser", DBUtils.AddSqlParameter("@Email", model.UserEmail),
-                                                              DBUtils.AddSqlParameter("@Name", model.Name),
-                                                              DBUtils.AddSqlParameter("@Surname", model.Surname));
 
-                return resp.Success;
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
+        public DatabaseQueryResponse FetchActiveUserPassword(string email)
+        {
+            return _connection.CallStoredProcedureWithData("GetActiveUserPassword", DBUtils.AddSqlParameter("@user_email", email));
+        }
+        
+        public DatabaseQueryResponse InsertNewUser(UserModel model)
+        {
+ 
+            return _connection.CallStoredProcedure("CreateUser", DBUtils.AddSqlParameter("@Email", model.UserEmail),
+                                                            DBUtils.AddSqlParameter("@Name", model.Name),
+                                                            DBUtils.AddSqlParameter("@Surname", model.Surname));
+
         }
 
-        public bool InsertUpdatePassword(string email, string passwordHash, string salt, int iterations, string algorithm)
+        public DatabaseQueryResponse InsertUpdatePassword(string email, string passwordHash, string salt, int iterations, string algorithm)
         {
-            string query = $""
+            return _connection.CallStoredProcedure("InsertUserPassword",
+                                                     DBUtils.AddSqlParameter("@user_email", email),
+                                                     DBUtils.AddSqlParameter("@password_hash", passwordHash),
+                                                     DBUtils.AddSqlParameter("@salt", salt),
+                                                     DBUtils.AddSqlParameter("@hash_algorithm", algorithm),
+                                                     DBUtils.AddSqlParameter("@iterations", iterations));
         }
     }
 }

@@ -106,6 +106,52 @@ namespace Wattmate_Site.WDatabase
             }
         }
 
+        public DatabaseQueryResponse CallStoredProcedureWithData(string procedureName, params SqlParameter[] variables)
+        {
+            DatabaseQueryResponse _response = new DatabaseQueryResponse();
+            _response.TimeStamp = DateTime.Now;
+            SqlConnection _connection = GetConnection();
+
+            try
+            {
+                _connection.Open();
+
+                using (SqlCommand cmd = new SqlCommand(procedureName, _connection))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    foreach (SqlParameter p in variables)
+                    {
+                        cmd.Parameters.Add(p);
+                    }
+
+                    DataTable dataTable = new DataTable();
+                    using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        da.Fill(dataTable);
+
+                    _response.Data = dataTable;
+                    _response.Success = true;
+                    return _response;
+                }
+
+          
+
+            }
+            catch (Exception ex)
+            {
+                _response.Data = null;
+                _response.ResponseMessage = ex.Message;
+                _response.Exception = ex;
+                return _response;
+            }
+            finally
+            {
+                _connection.Close();
+                _connection.Dispose();
+
+            }
+        }
+
 
         public DatabaseQueryResponse CallStoredProcedure(string procedureName, params SqlParameter[] variables)
         {

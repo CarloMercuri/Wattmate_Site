@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.AspNetCore.Authentication;
+using System.Data;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.DataProcessing.Interfaces;
 using Wattmate_Site.Security.Encryption;
@@ -7,6 +8,7 @@ using Wattmate_Site.Security.Models;
 using Wattmate_Site.Users.Database;
 using Wattmate_Site.Users.UserAuthentication.Interfaces;
 using Wattmate_Site.Users.UserAuthentication.Models;
+using Wattmate_Site.Utilities;
 using Wattmate_Site.WDatabase;
 using Wattmate_Site.WDatabase.QueriesModels;
 
@@ -19,6 +21,10 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
         {
             try
             {
+                //
+                // Try and see if a user with the same email exists already.
+                //
+
                 UsersDatabaseQueries _db = new UsersDatabaseQueries();
 
                 var dbUser = _db.GetUserData(loginData.UserEmail);
@@ -42,9 +48,9 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
 
                 // Encrypt the password
                 IPasswordProcessor _crypto = AuthenticationManager.GetCurrentPasswordProcessor();
-
                 NewPasswordHashResult encryptionResult = _crypto.HashNewPassword(loginData.UserPassword);
 
+                // In case of error
                 if (!encryptionResult.Success)
                 {
                     return new UserCreationRequestResult()
@@ -54,6 +60,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
                     };
                 }
 
+                // Create user and password entry
                 UserModel m = new UserModel()
                 {
                     UserEmail = loginData.UserEmail,
@@ -61,8 +68,31 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
                     Surname = loginData.Surname
                 };
 
-                bool created = _db.InsertNewUser(m);
+                DatabaseQueryResponse created = _db.InsertNewUser(m);
 
+                if (!created.Success)
+                {
+                    return new UserCreationRequestResult()
+                    {
+                        Success = false,
+                        Message = "Failed to create new user, internal error."
+                    };
+                }
+
+                DatabaseQueryResponse passwordInserted = _db.InsertUpdatePassword(m.UserEmail,
+                                                                                  encryptionResult.PasswordData.HashedPassword,
+                                                                                  encryptionResult.PasswordData.Salt,
+                                                                                  encryptionResult.PasswordData.Iterations,
+                                                                                  encryptionResult.PasswordData.Algorithm);
+
+                if (!passwordInserted.Success)
+                {
+                    return new UserCreationRequestResult()
+                    {
+                        Success = false,
+                        Message = "User created, but failed to create new password entry"
+                    };
+                }
 
 
                 return new UserCreationRequestResult()
@@ -86,44 +116,64 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
         }
 
 
-        public UserAuthenticationRequestResult AuthenticateUser(string inputUserName, string password)
+        public UserAuthenticationRequestResult AuthenticateUser(string email, string password)
         {
             UserAuthenticationRequestResult _result = new UserAuthenticationRequestResult();
-            _result.AuthenticatedUserData = null;
+            _result.UserData = null;
             _result.Success = false;
 
             try
             {
 
-                // Only need to be member of 1 of the groups to have access
-                bool hasAccess = false;
+                UsersDatabaseQueries _db = new UsersDatabaseQueries();
+                DatabaseQueryResponse _pw = _db.FetchActiveUserPassword(email);
 
-
-                if (hasAccess)
+                if (!_pw.Success || _pw.Data.Rows.Count == 0)
                 {
-                    //_logSession.LogGeneral($"User '{samName} authorized. IsAdmin: {_result.AuthenticatedUserData.IsAdmin}. " +
-                    //                       $"CanRead: {_result.AuthenticatedUserData.CanRead}. CanWrite: {_result.AuthenticatedUserData.CanWrite}",
-                    //                       ProcessLogLevel.PRODUCTION);
-                    _result.Success = hasAccess;
-                    _result.Message = "User has permission.";
-
-                    return _result;
+                    return new UserAuthenticationRequestResult()
+                    {
+                        Success = false,
+                        Message = "Internal error."
+                    };
                 }
-                else
+
+                DataRow row = _pw.Data.Rows[0];
+                PasswordHashData pData = new PasswordHashData();
+                pData.HashedPassword = DBUtils.FetchAsString(row["password_hash"]);
+                pData.Salt = DBUtils.FetchAsString(row["salt"]);
+                pData.Algorithm = DBUtils.FetchAsString(row["hash_algorithm"]);
+                pData.Iterations = DBUtils.FetchAsInt32(row["iterations"]);
+
+
+                // Decrypt the input password and match it with the stored one
+                IPasswordProcessor _crypto = AuthenticationManager.GetCurrentPasswordProcessor();
+                bool encryptionResult = _crypto.VerifyPassword(password, pData.HashedPassword, pData.Salt, pData.Iterations);
+
+                if (!encryptionResult)
                 {
-                    //_result.Success = false;
-                    //_result.Message = "User does not have permission to access the page.";
-                    //_logSession.LogGeneral($"Failed to authenticate user: {samName}", ProcessLogLevel.PRODUCTION);
-                    //_result.AuthenticatedUserData = null;
-
-                    return _result;
+                    return new UserAuthenticationRequestResult()
+                    {
+                        Success = false,
+                        Message = "Invalid username / password combination"
+                    };
                 }
+
+                // SUCCESS
+
+                var dbUser = _db.GetUserData(email);
+
+                return new UserAuthenticationRequestResult()
+                {
+                    Success = true,
+                    UserData = dbUser.UserModel
+                };
+
 
 
             }
             catch (Exception ex)
             {
-
+                _result.Success = false;
                 _result.Message = "Could not verify permissions.";
                 return _result;
             }
