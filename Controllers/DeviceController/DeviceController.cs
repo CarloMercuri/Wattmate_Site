@@ -13,27 +13,27 @@ namespace Wattmate_Site.Controllers.DeviceController
         
 
  
-        [HttpPost("poll")]
+        [HttpPost]
         public async Task<IActionResult> Poll([FromBody] DevicePollRequest request)
         {
             //
             // AUTHENTICATION
             //
 
-            // 1. Get secret key for deviceId
-            string secretKey = GetSecretKeyForDevice(request.DeviceId);
-            if (secretKey == null)
-                return Unauthorized("Unknown device");
+            //// 1. Get secret key for deviceId
+            //string secretKey = GetSecretKeyForDevice(request.DeviceId);
+            //if (secretKey == null)
+            //    return Unauthorized("Unknown device");
 
-            // 2. Recreate the raw message that was signed
-            string rawMessage = $"{request.DeviceId}|{request.Timestamp}|{JsonConvert.SerializeObject(request.Payload)}";
+            //// 2. Recreate the raw message that was signed
+            //string rawMessage = $"{request.DeviceId}|{request.Timestamp}|{JsonConvert.SerializeObject(request.Payload)}";
 
-            // 3. Compute HMAC
-            string computedHmac = ComputeHmacSha256(secretKey, rawMessage);
+            //// 3. Compute HMAC
+            //string computedHmac = ComputeHmacSha256(secretKey, rawMessage);
 
-            // 4. Compare HMACs
-            if (!SecureEquals(request.Hmac, computedHmac))
-                return Unauthorized("Invalid signature");
+            //// 4. Compare HMACs
+            //if (!SecureEquals(request.Hmac, computedHmac))
+            //    return Unauthorized("Invalid signature");
 
             // 5. If valid, process the request
             //
@@ -62,7 +62,7 @@ namespace Wattmate_Site.Controllers.DeviceController
         }
 
         // Server (admin panel? mobile app?) triggers a command to a device
-        [HttpPost("send-command")]
+        [HttpPost()]
         public IActionResult SendCommand([FromBody] DeviceCommandRequest request)
         {
             if (DeviceRequestsProcessor.SendCommand(request))
