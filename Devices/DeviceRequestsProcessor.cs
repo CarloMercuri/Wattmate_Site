@@ -8,10 +8,23 @@ namespace Wattmate_Site.Devices
         // Store waiting requests (deviceId -> pending response)
         public static ConcurrentDictionary<string, TaskCompletionSource<DeviceCommandResponse>> PendingRequests = new();
 
+        public static ConcurrentDictionary<string, ConcurrentQueue<DeviceCommandResponse>> CommandsQueue = new();
+
         public static TaskCompletionSource<DeviceCommandResponse> AddRequest(DevicePollRequest request)
         {
             var tcs = new TaskCompletionSource<DeviceCommandResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
             PendingRequests[request.DeviceId] = tcs;
+            if (CommandsQueue.ContainsKey(request.DeviceId))
+            {
+                if (CommandsQueue[request.DeviceId].TryDequeue(out DeviceCommandResponse resp))
+                {
+                    tcs.TrySetResult(new DeviceCommandResponse
+                    {
+                        HasCommand = true,
+                        Command = resp.Command
+                    });
+                }
+            }
             return tcs;
         }
 
@@ -23,19 +36,40 @@ namespace Wattmate_Site.Devices
 
         public static bool SendCommand(DeviceCommandRequest request)
         {
-            if (PendingRequests.TryGetValue(request.DeviceId, out var tcs))
+            try
             {
-                // Send the command back to waiting Arduino
-                tcs.TrySetResult(new DeviceCommandResponse
+                if (PendingRequests.TryGetValue(request.DeviceId, out var tcs))
                 {
-                    HasCommand = true,
-                    Command = request.Command
-                });
+                    // Send the command back to waiting Arduino
+                    tcs.TrySetResult(new DeviceCommandResponse
+                    {
+                        HasCommand = true,
+                        Command = request.Command
+                    });
 
-                return true;
+                    return true;
+                }
+                else // device not polling atm, add to queue
+                {
+                    if (!CommandsQueue.ContainsKey(request.DeviceId))
+                    {
+                        CommandsQueue.TryAdd(request.DeviceId, new ConcurrentQueue<DeviceCommandResponse>());
+
+                    }
+
+                    CommandsQueue[request.DeviceId].Enqueue(new DeviceCommandResponse
+                    {
+                        HasCommand = true,
+                        Command = request.Command
+                    });
+
+                    return true;
+                }
             }
-
-            return false;
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
     }
 }
