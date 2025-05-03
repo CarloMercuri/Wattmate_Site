@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using Wattmate_Site.Controllers.Attributes;
+using Wattmate_Site.Controllers.ViewModels;
+using Wattmate_Site.DataModels;
+using Wattmate_Site.Devices;
 using Wattmate_Site.Models;
 using Wattmate_Site.Users.UserAuthentication.Extensions;
 using Wattmate_Site.Users.UserAuthentication.Interfaces;
@@ -20,7 +23,13 @@ namespace Wattmate_Site.Controllers
         [AuthenticationRequired]
         public IActionResult Index()
         {
-            return View();
+            UserModel _authenticatedUser = HttpContext.Session.GetUserData();
+            DeviceProcessor _devicesProcessor = new DeviceProcessor();
+
+            MainViewModel model = new MainViewModel();
+            model.UserData = _authenticatedUser;
+            model.Devices = _devicesProcessor.GetUserDevices(_authenticatedUser.UserEmail);
+            return View(model);
         }
 
         public IActionResult Logout()

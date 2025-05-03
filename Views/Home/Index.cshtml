@@ -1,8 +1,51 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@using Wattmate_Site.DataModels
+@model Wattmate_Site.Controllers.ViewModels.MainViewModel
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary px-3">
+        <a class="navbar-brand" href="#">Wattmate</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <button class="btn btn-outline-light me-2">Usage</button>
+                </li>
+                <li class="nav-item">
+                    <button class="btn btn-outline-light">History</button>
+                </li>
+            </ul>
+            <span class="navbar-text text-white">
+                @Model.UserData.FullName<br><small>@Model.UserData.UserEmail</small>
+            </span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row g-4">
+            <!-- Device Card -->
+            @foreach(DeviceModel device in Model.Devices)
+            {
+                <div class="col-12">
+                    <div class="border p-4 bg-white rounded shadow-sm">
+                        <h5>@device.DeviceName</h5>
+                        <p class="text-muted">Device ID: @device.DeviceId</p>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-primary">Edit</button>
+                            <button class="btn btn-sm btn-secondary">View History</button>
+                            <button class="btn btn-sm btn-danger">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            }
+            
+
+           
+
+            <!-- Add more devices as needed -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>

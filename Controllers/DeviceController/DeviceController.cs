@@ -57,7 +57,8 @@ namespace Wattmate_Site.Controllers.DeviceController
             else
             {
                 // Timeout - no command
-                return Ok(new DeviceCommandResponse { HasCommand = false });
+                return NoContent();
+                //return NoContent(DeviceCommandResponse { HasCommand = false });
             }
         }
 
@@ -71,6 +72,19 @@ namespace Wattmate_Site.Controllers.DeviceController
             }
 
             return NotFound("Device not polling right now.");
+        }
+
+        [HttpGet]
+        public IActionResult TestGet()
+        {
+            return Ok(new DeviceCommandResponse()
+            {
+                HasCommand = false,
+                Command = "Test command",
+                Expirationtime = 15000,
+                IssueDate = DateTime.Now,
+
+            });
         }
 
     /*
@@ -129,7 +143,7 @@ namespace Wattmate_Site.Controllers.DeviceController
     {
         public string DeviceId { get; set; }
         public string Timestamp { get; set; }
-        public object Payload { get; set; } // you can make this a specific type if you know it
+        public string Payload { get; set; } // you can make this a specific type if you know it
         public string Hmac { get; set; }
     }
 
@@ -143,6 +157,9 @@ namespace Wattmate_Site.Controllers.DeviceController
     {
         public bool HasCommand { get; set; }
         public string Command { get; set; }
+        public DateTime IssueDate { get; set; }
+        // in seconds
+        public uint Expirationtime { get; set; }
     }
 
 }
