@@ -26,6 +26,7 @@ namespace Wattmate_Site.DataProcessing
                 // try fetch for that day
 
                 await FetchDayPrices(day, zone);
+                resp = _db.GetElectricityPrices(day, zone);
             }
 
             foreach(DataRow row in resp.Data.Rows)

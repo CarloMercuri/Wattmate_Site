@@ -40,6 +40,9 @@ namespace Wattmate_Site.Controllers.DeviceController
             // PROCESSING
             //
 
+
+            DeviceProcessor.UpdateLastSeenDevices(request.DeviceId);
+
             // Save it into pending requests
             var tcs = DeviceRequestsProcessor.AddRequest(request);
 
@@ -60,6 +63,22 @@ namespace Wattmate_Site.Controllers.DeviceController
                 return NoContent();
                 //return NoContent(DeviceCommandResponse { HasCommand = false });
             }
+        }
+
+        [HttpPost]
+        public IActionResult RequestChangeDeviceStatus([FromBody] DeviceStatus status)
+        {
+            DeviceProcessor _proc = new();
+            _proc.RequestDeviceStatuschange(status);
+            return Ok();
+        }
+
+        [HttpPost]
+        public IActionResult UpdateDeviceStatus([FromBody] DeviceStatus status)
+        {
+            DeviceProcessor _proc = new();
+            _proc.UpdateDeviceStatus(status);
+            return Ok();
         }
 
         // Server (admin panel? mobile app?) triggers a command to a device
@@ -145,6 +164,12 @@ namespace Wattmate_Site.Controllers.DeviceController
         public string Timestamp { get; set; }
         public string Payload { get; set; } // you can make this a specific type if you know it
         public string Hmac { get; set; }
+    }
+
+    public class DeviceStatus
+    {
+        public string DeviceId { get; set; }
+        public string Status { get; set; }
     }
 
     public class DeviceCommandRequest
