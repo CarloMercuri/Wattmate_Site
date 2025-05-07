@@ -23,6 +23,12 @@ namespace Wattmate_Site.Devices
             }
         }
 
+        public void InsertNewKhwReading(KhwReading reading)
+        {
+            WDatabaseQueries _db = new();
+            _db.InsertKhwReading(reading);
+        }
+
         public void RequestDeviceStatuschange(DeviceStatus status)
         {
             string cmd = status.Status == "Active" ? "ACT_1" : "CLS_1";

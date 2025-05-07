@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using Wattmate_Site.DataModels;
 using Wattmate_Site.Devices;
 
 namespace Wattmate_Site.Controllers.DeviceController
@@ -70,6 +71,14 @@ namespace Wattmate_Site.Controllers.DeviceController
         {
             DeviceProcessor _proc = new();
             _proc.RequestDeviceStatuschange(status);
+            return Ok();
+        }
+
+        [HttpPost]
+        public IActionResult SendKhwReading([FromBody] KhwReading reading)
+        {
+            DeviceProcessor _proc = new();
+            _proc.InsertNewKhwReading(reading);
             return Ok();
         }
 

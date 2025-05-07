@@ -29,6 +29,27 @@ namespace Wattmate_Site.WDatabase
                                                     DBUtils.AddSqlParameter("@Email", email));
         }
 
+        public DatabaseQueryResponse InsertKhwReading(KhwReading khwReading) 
+        {
+            DateTime s = DateTime.MinValue;
+
+            if (DateTime.TryParse(khwReading.Timestamp, out DateTime parsed))
+            {
+                return _connection.CallStoredProcedure("InsertKhwReading",
+                                    DBUtils.AddSqlParameter("@device_id", khwReading.DeviceId),
+                                    DBUtils.AddSqlParameter("@timestamp", khwReading.Timestamp),
+                                    DBUtils.AddSqlParameter("@reading", khwReading.Reading));
+            }
+            else
+            {
+                return new DatabaseQueryResponse()
+                {
+                    Success = false,
+                    ResponseMessage = "Invalid timestamp"
+                };
+            }
+        }
+
         public DatabaseQueryResponse GetElectricityPrices(DateTime date, string zone)
         {
             //return _connection.CallStoredProcedureWithData("GetElectricityPricesByDate",
