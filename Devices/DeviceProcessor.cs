@@ -23,10 +23,16 @@ namespace Wattmate_Site.Devices
             }
         }
 
-        public void InsertNewKhwReading(KhwReading reading)
+        public void InsertNewTelemetry(TelemetryData reading)
         {
             WDatabaseQueries _db = new();
-            _db.InsertKhwReading(reading);
+            _db.InsertNewTelemetry(reading);
+        }
+
+        public void UpdateDoorStatus(DeviceDoorStatus request)
+        {
+            WDatabaseQueries _db = new();
+            _db.UpdateDoorStatus(request);
         }
 
         public void RequestDeviceStatuschange(DeviceStatus status)

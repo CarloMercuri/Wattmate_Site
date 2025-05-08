@@ -58,6 +58,30 @@ namespace Wattmate_Site.Devices
           
         }
 
+        public static List<DeviceCommandResponse> GetRequests(DevicePollRequest request)
+        {
+            List<DeviceCommandResponse> answer = new();
+            // If there are already commands queued for this device, deliver them immediately
+            if (CommandsQueue.ContainsKey(request.DeviceId))
+            {
+                if (CommandsQueue[request.DeviceId].Count > 0)
+                {
+
+                    // Dequeue all queued commands
+                    while (CommandsQueue[request.DeviceId].TryDequeue(out var item))
+                    {
+                        answer.Add(item);
+                    }
+
+                    // Complete the TaskCompletionSource with the queued commands
+                    
+                }
+
+            }
+
+            return answer;
+        }
+
         /// <summary>
         /// Sends a command to a device.
         /// If the device is currently polling (waiting for commands), the command is sent immediately.

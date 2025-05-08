@@ -29,16 +29,26 @@ namespace Wattmate_Site.WDatabase
                                                     DBUtils.AddSqlParameter("@Email", email));
         }
 
-        public DatabaseQueryResponse InsertKhwReading(KhwReading khwReading) 
+        public DatabaseQueryResponse UpdateDoorStatus(DeviceDoorStatus request)
+        {
+            return _connection.CallStoredProcedure("InsertFridgeDoorStatus",
+                                       DBUtils.AddSqlParameter("@device_id", request.DeviceId),
+                                    DBUtils.AddSqlParameter("@timestamp", request.Timestamp),
+                                    DBUtils.AddSqlParameter("@door_open", request.IsOpen));
+        }
+
+        public DatabaseQueryResponse InsertNewTelemetry(TelemetryData reading) 
         {
             DateTime s = DateTime.MinValue;
 
-            if (DateTime.TryParse(khwReading.Timestamp, out DateTime parsed))
+            if (DateTime.TryParse(reading.Timestamp, out DateTime parsed))
             {
-                return _connection.CallStoredProcedure("InsertKhwReading",
-                                    DBUtils.AddSqlParameter("@device_id", khwReading.DeviceId),
-                                    DBUtils.AddSqlParameter("@timestamp", khwReading.Timestamp),
-                                    DBUtils.AddSqlParameter("@reading", khwReading.Reading));
+                return _connection.CallStoredProcedure("InsertFridgeTelemetry",
+                                    DBUtils.AddSqlParameter("@device_id", reading.DeviceId),
+                                    DBUtils.AddSqlParameter("@timestamp", reading.Timestamp),
+                                    DBUtils.AddSqlParameter("@temperature", reading.Temperature),
+                                    DBUtils.AddSqlParameter("@rele_active", reading.ReleActive),
+                                    DBUtils.AddSqlParameter("@kwh", reading.KwhReading));
             }
             else
             {

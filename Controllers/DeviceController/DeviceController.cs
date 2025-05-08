@@ -5,15 +5,32 @@ using System.Security.Cryptography;
 using System.Text;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.Devices;
+using Wattmate_Site.WLog;
 
 namespace Wattmate_Site.Controllers.DeviceController
 {
     public class DeviceController : ControllerBase
     {
 
-        
 
- 
+        [HttpPost]
+        public async Task<IActionResult> GetStatus([FromBody] DevicePollRequest request)
+        {
+            DeviceProcessor.UpdateLastSeenDevices(request.DeviceId);
+
+            List<DeviceCommandResponse> actions = DeviceRequestsProcessor.GetRequests(request);
+
+            if(actions is null || actions.Count == 0)
+            {
+                return NoContent();
+            }
+            else
+            {
+                return Ok(actions);
+            }
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> Poll([FromBody] DevicePollRequest request)
         {
@@ -67,6 +84,14 @@ namespace Wattmate_Site.Controllers.DeviceController
         }
 
         [HttpPost]
+        public IActionResult UpdateDoorStatus([FromBody] DeviceDoorStatus status)
+        {
+            DeviceProcessor _proc = new();
+            _proc.UpdateDoorStatus(status);
+            return Ok();
+        }
+
+        [HttpPost]
         public IActionResult RequestChangeDeviceStatus([FromBody] DeviceStatus status)
         {
             DeviceProcessor _proc = new();
@@ -75,10 +100,20 @@ namespace Wattmate_Site.Controllers.DeviceController
         }
 
         [HttpPost]
-        public IActionResult SendKhwReading([FromBody] KhwReading reading)
+        public IActionResult Telemetry([FromBody] TelemetryData reading)
         {
+            string obj = "";
+            if(reading is null)
+            {
+                obj = "null";
+            }
+            else
+            {
+                obj = JsonConvert.SerializeObject(reading);
+            }
+            WLogging.Log($"SendKhwReading: reading object: " + obj);
             DeviceProcessor _proc = new();
-            _proc.InsertNewKhwReading(reading);
+            _proc.InsertNewTelemetry(reading);
             return Ok();
         }
 
@@ -175,9 +210,17 @@ namespace Wattmate_Site.Controllers.DeviceController
         public string Hmac { get; set; }
     }
 
+    public class DeviceDoorStatus
+    {
+        public string DeviceId { get; set; }
+        public string Timestamp { get; set; }
+        public bool IsOpen{ get; set; }
+    }
+
     public class DeviceStatus
     {
         public string DeviceId { get; set; }
+        public string Timestamp { get; set; }
         public string Status { get; set; }
     }
 
