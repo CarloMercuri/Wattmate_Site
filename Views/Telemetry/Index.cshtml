@@ -1,0 +1,234 @@
+﻿
+<body class="bg-light" >
+    <div style="margin-left: 100px;">
+        <h2>Total Cost:</h2>
+        <h2 id="totalCost"></h2>
+    </div>
+    <div style="height: 300px; margin-top: 50px; margin-left: 0px;">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <div style="height: 300px; margin-top: 50px; margin-left: 0px;">
+        <canvas id="costChart"></canvas>
+    </div>
+   
+  
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+
+<script>
+
+    getFridgeTemperatureData();
+
+    async function getFridgeTemperatureData() {
+        var body = { DeviceId: "KUF-XEI-4D36", 
+                     StartDate: "2025-05-08 14:00", 
+                     EndDate: "2025-05-09 08:00", 
+                     GroupingInterval: 0 }
+
+        // Get 10 minutes intervals
+        const response = await fetch('/Telemetry/GetFridgeTemperatureData', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+
+        const apiData = await response.json();
+
+
+        // Get 1 hour intervals
+        var body_1h = {
+            DeviceId: "KUF-XEI-4D36",
+            StartDate: "2025-05-08 14:00",
+            EndDate: "2025-05-09 08:00",
+            GroupingInterval: 0
+        }
+
+        // send data
+        const response_1h = await fetch('/Telemetry/GetFridgeTemperatureData', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body_1h)
+        });
+
+        if (response_1h.status == 200) {
+
+        }
+        else {
+
+        }
+
+        const data_1h = await response_1h.json();
+
+
+        let labels = [];
+        let iData = [];
+        let kwh = [];
+        let cost = [];
+        let labels_1h = [];
+        let cost_1h = [];
+        let prices = [];
+
+        apiData.temperatureData.forEach(interval => {
+            let start = new Date(interval.intervalStart);
+            labels.push(start.getHours() + ":" + start.getMinutes());
+            iData.push(interval.avarageIntervalTemperature);
+            kwh.push(interval.kwhDelta);
+            cost.push(interval.costInDkk);
+        });
+
+
+        data_1h.temperatureData.forEach(interval => {
+            let start = new Date(interval.intervalStart);
+            let end = new Date(interval.intervalEnd);
+            labels_1h.push(formatIntervalLabel(start, end));
+            cost_1h.push(interval.costInDkk);
+            // let foundPrice = data_1h.prices.find(x => new Date(x.timeStart) == start);
+            // prices.push(foundPrice.dkk);
+        });
+
+
+        const ctx = document.getElementById('myChart');
+        const costchart = document.getElementById('costChart');
+        const totalCostLabel = document.getElementById('totalCost');
+        totalCostLabel.innerHTML = apiData.totalCost;
+        
+        const data = {
+            labels: labels,
+            datasets: [{
+                label: 'Temperature',
+                data: iData,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            }, {
+                label: 'Kwh usage',
+                data: kwh,
+                fill: true,
+                borderColor: 'rgba(0, 192, 0, 0.8)',
+                tension: 0.1
+            }
+            ]
+        };
+
+        const costData = {
+            labels: labels_1h,
+            datasets: [{
+                label: 'Dkk',
+                data: cost_1h,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            }
+            ]
+        };
+
+        let myBarChart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                padding: 4,
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        },
+                        beginAtZero: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values',
+                        }
+                    }
+                }
+            }
+        });
+
+        //
+        // COST CHART
+        //
+
+        let costChartD = new Chart(costChart, {
+            type: 'bar',
+            data: costData,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                padding: 4,
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        },
+                        beginAtZero: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values',
+                        }
+                    }
+                }
+            }
+        });
+
+        function formatIntervalLabel(startDate, endDate){
+            let s_hours = startDate.getHours() > 9 ? startDate.getHours() : "0" + startDate.getHours();
+            let s_mins = startDate.getMinutes() > 9 ? startDate.getMinutes() : "0" + startDate.getMinutes();
+            let e_hours = endDate.getHours() > 9 ? endDate.getHours() : "0" + endDate.getHours();
+            let e_mins = endDate.getMinutes() > 9 ? endDate.getMinutes() : "0" + endDate.getMinutes();
+          
+
+            return s_hours + ":" + s_mins + " - " + e_hours + ":" + e_mins; 
+        }
+        
+    }
+</script>

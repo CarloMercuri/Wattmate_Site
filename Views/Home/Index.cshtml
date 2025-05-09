@@ -61,9 +61,7 @@
                 </div>
             }
             
-            <div style="height: 300px;">
-                <canvas id="myChart"></canvas>
-            </div>
+         
            
 
             <!-- Add more devices as needed -->
@@ -74,65 +72,7 @@
 </body>
 
 <script>
-    const ctx = document.getElementById('myChart');
-
-    const labels = ['1', '2', '3', '4', '5', '6', '7']
-    const data = {
-        labels: labels,
-        datasets: [{
-            label: 'My First Dataset',
-            data: [65, 59, 80, 81, 56, 55, 40],
-            fill: false,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-        }, {
-            label: 'Temperature',
-            data: [10, 20, 8, 5, 4, 3, 4, 5],
-            fill: true,
-            borderColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
-        }]
-    };
-
-    let myBarChart = new Chart(ctx, {
-        type: 'line',
-        data: data,
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Maj',
-                        font: {
-                            padding: 4,
-                            size: 20,
-                            weight: 'bold',
-                            family: 'Arial'
-                        },
-                        color: 'darkblue'
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Values',
-                        font: {
-                            size: 20,
-                            weight: 'bold',
-                            family: 'Arial'
-                        },
-                        color: 'darkblue'
-                    },
-                    beginAtZero: true,
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Values',
-                    }
-                }
-            }
-        }
-    });
+   
 
 
     // new Chart(ctx, {

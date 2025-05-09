@@ -12,35 +12,40 @@ namespace Wattmate_Site.DataProcessing
 {
     public class PricesProcessor
     {
-        public async Task<List<ElectricityPriceUnit>> GetDayPrices(DateTime day, string zone)
+        public async Task<List<ElectricityPriceUnit>> GetDaysPrices(List<DateTime> days, string zone)
         {
             List<ElectricityPriceUnit> returnData = new();
             WDatabaseQueries _db = new();
 
-            DatabaseQueryResponse resp = _db.GetElectricityPrices(day, zone);
-
-            if (!resp.Success) return null;
-
-            if(resp.Data.Rows.Count == 0)
+            foreach(DateTime day in days)
             {
-                // try fetch for that day
+                DatabaseQueryResponse resp = _db.GetElectricityPrices(day, zone);
 
-                await FetchDayPrices(day, zone);
-                resp = _db.GetElectricityPrices(day, zone);
-            }
+                if (!resp.Success) return null;
 
-            foreach(DataRow row in resp.Data.Rows)
-            {
-                returnData.Add(new ElectricityPriceUnit()
+                if (resp.Data.Rows.Count == 0)
                 {
-                    Id = DBUtils.FetchAsInt32(row["Id"]),
-                    DKK = DBUtils.FetchAsFloat(row["DKK"]),
-                    EUR = DBUtils.FetchAsFloat(row["EUR"]),
-                    Zone = DBUtils.FetchAsString(row["DK_ZONE"]),
-                    TimeStart = DBUtils.FetchAsDateTime(row["time_start"], DateTime.MinValue),
-                    TimeEnd = DBUtils.FetchAsDateTime(row["time_end"], DateTime.MinValue),
-                });
+                    // try fetch for that day
+
+                    await FetchDayPrices(day, zone);
+                    resp = _db.GetElectricityPrices(day, zone);
+                }
+
+                foreach (DataRow row in resp.Data.Rows)
+                {
+                    returnData.Add(new ElectricityPriceUnit()
+                    {
+                        Id = DBUtils.FetchAsInt32(row["Id"]),
+                        DKK = DBUtils.FetchAsFloat(row["DKK"]),
+                        EUR = DBUtils.FetchAsFloat(row["EUR"]),
+                        Zone = DBUtils.FetchAsString(row["DK_ZONE"]),
+                        TimeStart = DBUtils.FetchAsDateTime(row["time_start"], DateTime.MinValue),
+                        TimeEnd = DBUtils.FetchAsDateTime(row["time_end"], DateTime.MinValue),
+                    });
+                }
             }
+
+           
 
             return returnData;
             

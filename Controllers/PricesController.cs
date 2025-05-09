@@ -11,7 +11,7 @@ namespace Wattmate_Site.Controllers
             PricesProcessor p = new PricesProcessor();
             if (DateTime.TryParse(day, out DateTime date)) 
             {
-                var prices = await p.GetDayPrices(date, zone);
+                var prices = await p.GetDaysPrices([date], zone);
                 return Ok(prices);
             }
             else

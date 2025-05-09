@@ -43,12 +43,25 @@ namespace Wattmate_Site.WDatabase
 
             if (DateTime.TryParse(reading.Timestamp, out DateTime parsed))
             {
-                return _connection.CallStoredProcedure("InsertFridgeTelemetry",
+                 _connection.CallStoredProcedure("InsertFridgeTelemetry",
                                     DBUtils.AddSqlParameter("@device_id", reading.DeviceId),
                                     DBUtils.AddSqlParameter("@timestamp", reading.Timestamp),
                                     DBUtils.AddSqlParameter("@temperature", reading.Temperature),
                                     DBUtils.AddSqlParameter("@rele_active", reading.ReleActive),
                                     DBUtils.AddSqlParameter("@kwh", reading.KwhReading));
+
+                foreach(string st in reading.Pulses)
+                {
+                    _connection.SendNonQuery("INSERT INTO DevicePulses (device_id, timestamp) VALUES (@id, @timestamp)", 
+                                                    DBUtils.AddSqlParameter("@id", reading.DeviceId),
+                                                    DBUtils.AddSqlParameter("@timestamp", DateTime.Parse(st)));
+                }
+
+                return new DatabaseQueryResponse()
+                {
+                    Success = true,
+                };
+                
             }
             else
             {
@@ -72,7 +85,7 @@ namespace Wattmate_Site.WDatabase
 	                        AND DK_ZONE = @Zone;";
 
             return _connection.SendQuery(query,
-                                DBUtils.AddSqlParameter("@TargetDate", date),
+                                DBUtils.AddSqlParameter("@TargetDate", date.ToString("yyyy-MM-dd")),
                                 DBUtils.AddSqlParameter("@Zone", zone));
         }
 

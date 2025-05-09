@@ -7,5 +7,6 @@
         public Int32 KwhReading { get; set; }
         public float Temperature { get; set; }
         public bool ReleActive { get; set; }
+        public List<string> Pulses { get; set; } = new List<string>();
      }
 }
