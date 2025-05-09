@@ -26,7 +26,7 @@
         var body = { DeviceId: "KUF-XEI-4D36", 
                      StartDate: "2025-05-08 14:00", 
                      EndDate: "2025-05-09 08:00", 
-                     GroupingInterval: 0 }
+                     GroupingInterval: 10 }
 
         // Get 10 minutes intervals
         const response = await fetch('/Telemetry/GetFridgeTemperatureData', {
@@ -52,7 +52,7 @@
             DeviceId: "KUF-XEI-4D36",
             StartDate: "2025-05-08 14:00",
             EndDate: "2025-05-09 08:00",
-            GroupingInterval: 0
+            GroupingInterval: 10
         }
 
         // send data
@@ -90,14 +90,16 @@
             cost.push(interval.costInDkk);
         });
 
-
+        console.log(data_1h.prices);
         data_1h.temperatureData.forEach(interval => {
             let start = new Date(interval.intervalStart);
             let end = new Date(interval.intervalEnd);
             labels_1h.push(formatIntervalLabel(start, end));
             cost_1h.push(interval.costInDkk);
-            // let foundPrice = data_1h.prices.find(x => new Date(x.timeStart) == start);
-            // prices.push(foundPrice.dkk);
+            // let foundPrice = data_1h.prices.find(x => new Date(x.timeStart).getTime() === start.getTime());
+            // if (foundPrice) {
+            //     prices.push(foundPrice.dkk);
+            // }
         });
 
 
@@ -129,6 +131,14 @@
             datasets: [{
                 label: 'Dkk',
                 data: cost_1h,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            },
+            {
+                label: 'Dkk',
+                type: 'line',
+                data: prices,
                 fill: true,
                 borderColor: 'rgba(75, 192, 192, 0.8)',
                 tension: 0.1
