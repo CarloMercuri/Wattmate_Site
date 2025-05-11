@@ -23,7 +23,7 @@ namespace Wattmate_Site.Controllers
                 if (!DateTime.TryParse(request.StartDate, out startDate)) return BadRequest("Start Date invalid");
                 if (!DateTime.TryParse(request.EndDate, out endDate)) return BadRequest("End Date invalid");
 
-                TelemetryViewModel model = new TelemetryViewModel();
+                ViewModels.TelemetryData model = new ViewModels.TelemetryData();
 
                 // Get a list of unique days
                 List<DateTime> dates = new List<DateTime>();
@@ -59,9 +59,11 @@ namespace Wattmate_Site.Controllers
         }
 
         [AuthenticationRequired]
-        public IActionResult Index()
-        {           
-            return View();
+        public IActionResult Index(string deviceId)
+        {
+            TelemetryViewModel model = new();
+            model.DeviceId = deviceId;
+            return View(model);
         }
     }
 }

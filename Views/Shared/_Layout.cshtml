@@ -10,6 +10,23 @@
 </head>
 <body>
     <header>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary px-3">
+            <a class="navbar-brand" href="/">Wattmate</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <button class="btn btn-outline-light me-2">Usage</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-outline-light">History</button>
+                    </li>
+                </ul>
+               @*  <span class="navbar-text text-white">
+                    @Model.UserData.FullName<br><small>@Model.UserData.UserEmail</small>
+                </span> *@
+            </div>
+        </nav>
        @*  <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Wattmate_Site</a>

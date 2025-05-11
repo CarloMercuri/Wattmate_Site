@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <Folder Include="Devices\RequestModels\" />
+    <Folder Include="wwwroot\Resources\Logos\" />
   </ItemGroup>
 
 </Project>
