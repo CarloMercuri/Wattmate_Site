@@ -19,6 +19,13 @@ namespace Wattmate_Site.DataProcessing
 
             foreach(DateTime day in days)
             {
+                if(day.Date > DateTime.Now.Date)
+                {
+                    if(DateTime.Now.Hour < 14)
+                    {
+                        continue; // tomorrow prices are only available after 13.30
+                    }
+                }
                 DatabaseQueryResponse resp = _db.GetElectricityPrices(day, zone);
 
                 if (!resp.Success) return null;
@@ -33,7 +40,7 @@ namespace Wattmate_Site.DataProcessing
 
                 foreach (DataRow row in resp.Data.Rows)
                 {
-                    returnData.Add(new ElectricityPriceUnit()
+                    var price = new ElectricityPriceUnit()
                     {
                         Id = DBUtils.FetchAsInt32(row["Id"]),
                         DKK = DBUtils.FetchAsFloat(row["DKK"]),
@@ -41,7 +48,12 @@ namespace Wattmate_Site.DataProcessing
                         Zone = DBUtils.FetchAsString(row["DK_ZONE"]),
                         TimeStart = DBUtils.FetchAsDateTime(row["time_start"], DateTime.MinValue),
                         TimeEnd = DBUtils.FetchAsDateTime(row["time_end"], DateTime.MinValue),
-                    });
+                    };
+
+                    // HORRIBLE FIX but I don't have time.
+                    price.TimeStart = price.TimeStart.AddHours(-2);
+                    price.TimeEnd = price.TimeEnd.AddHours(-2);
+                    returnData.Add(price);
                 }
             }
 

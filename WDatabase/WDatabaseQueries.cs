@@ -49,13 +49,7 @@ namespace Wattmate_Site.WDatabase
                                     DBUtils.AddSqlParameter("@temperature", reading.Temperature),
                                     DBUtils.AddSqlParameter("@rele_active", reading.ReleActive),
                                     DBUtils.AddSqlParameter("@kwh", reading.KwhReading));
-
-                foreach(string st in reading.Pulses)
-                {
-                    _connection.SendNonQuery("INSERT INTO DevicePulses (device_id, timestamp) VALUES (@id, @timestamp)", 
-                                                    DBUtils.AddSqlParameter("@id", reading.DeviceId),
-                                                    DBUtils.AddSqlParameter("@timestamp", DateTime.Parse(st)));
-                }
+               
 
                 return new DatabaseQueryResponse()
                 {

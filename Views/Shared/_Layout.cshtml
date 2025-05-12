@@ -16,11 +16,9 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <button class="btn btn-outline-light me-2">Usage</button>
+                        <button class="btn btn-outline-light" onclick="toPrices()">Prices</button>
                     </li>
-                    <li class="nav-item">
-                        <button class="btn btn-outline-light">History</button>
-                    </li>
+                  
                 </ul>
                @*  <span class="navbar-text text-white">
                     @Model.UserData.FullName<br><small>@Model.UserData.UserEmail</small>
@@ -55,12 +53,17 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - Wattmate_Site - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - Wattmate - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        function toPrices() {
+            window.location.href = "/Prices";
+        }
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

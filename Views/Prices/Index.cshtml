@@ -1,0 +1,175 @@
+﻿
+<div class="d-inline-flex" style="width: 100%;">
+    <div style="width: 50%; height: 100vh; border-right: 1px solid black">
+        <div style="height: 80px; width: 80%; text-align: center;">
+            <h2>I dag</h2>
+        </div>
+        <div style="height: 300px; margin-top: 50px; margin-left: 0px;">
+            <canvas id="today-chart"></canvas>
+        </div>
+    </div>
+
+    <div style="width: 50%;">
+        <div style="height: 80px; width: 80%; text-align: center;">
+            <h2>I morgen</h2>
+        </div>
+        <div style="height: 300px; margin-top: 50px; margin-left: 0px;">
+            <canvas id="tomorrow-chart"></canvas>
+        </div>
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    getPricesData();
+
+    async function getPricesData() {
+
+        const response = await fetch('/Prices/GetStandardPrices?zone=DK2', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+
+        const apiData = await response.json();
+        let todayPrices = [];
+        let tomorrowPrices = [];
+
+        const today = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+
+        apiData.forEach(item => {
+            const timeStart = new Date(item.timeStart);
+
+            const isToday = timeStart.toDateString() === today.toDateString();
+            const isTomorrow = timeStart.toDateString() === tomorrow.toDateString();
+
+
+            if (isToday) {
+                todayPrices.push(item.dkk);
+            } else if (isTomorrow) {
+               
+                tomorrowPrices.push(item.dkk);
+            }
+        });
+
+        const c_today = document.getElementById('today-chart');
+        const c_tomorrow = document.getElementById('tomorrow-chart');
+        const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+
+        const data_today = {
+            labels: hours,
+            datasets: [{
+                label: 'Pris',
+                data: todayPrices,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            }
+            ]
+        };
+
+        const data_tomorrow = {
+            labels: hours,
+            datasets: [{
+                label: 'Pris',
+                data: tomorrowPrices,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            }
+            ]
+        };
+
+        let todayChart = new Chart(c_today, {
+            type: 'line',
+            data: data_today,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                padding: 4,
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        },
+                        beginAtZero: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values',
+                        }
+                    }
+                }
+            }
+        });
+
+        let tomorrowChart = new Chart(c_tomorrow, {
+            type: 'line',
+            data: data_tomorrow,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                padding: 4,
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                size: 20,
+                                weight: 'bold',
+                                family: 'Arial'
+                            },
+                            color: 'darkblue'
+                        },
+                        beginAtZero: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values',
+                        }
+                    }
+                }
+            }
+        });
+
+    }
+</script>
