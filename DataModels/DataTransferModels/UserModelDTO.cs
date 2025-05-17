@@ -1,16 +1,13 @@
 ﻿using Wattmate_Site.DataModels.Attributes;
 
-namespace Wattmate_Site.DataModels
+namespace Wattmate_Site.DataModels.DataTransferModels
 {
-    public class UserModel
+    public class UserModelDTO
     {
         /// <summary>
         /// User (Login) name 
         /// </summary>
         public string UserName { get; set; }
-
-        [HideFromDTO]
-        public string UserId { get; set; }
 
         /// <summary>
         /// Real name of our user
@@ -22,10 +19,10 @@ namespace Wattmate_Site.DataModels
         /// </summary>
         public string Surname { get; set; }
 
+
         /// <summary>
         /// Formats the name in <Name> <Surname> version
         /// </summary>
-        [HideFromDTO]
         public string FullName => Name + " " + Surname;
     }
 }

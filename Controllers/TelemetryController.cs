@@ -12,8 +12,9 @@ namespace Wattmate_Site.Controllers
 {
     public class TelemetryController : SecureAccessController
     {
+        [AuthenticationRequired]
         [HttpPost]
-        public async Task<IActionResult> GetFridgeTemperatureData([FromBody] FridgeTelemetryRequest request)
+        public async Task<IActionResult> GetFridgeTelemetry([FromBody] FridgeTelemetryRequest request)
         {
             try
             {

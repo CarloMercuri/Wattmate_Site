@@ -6,6 +6,7 @@ using System.Runtime;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.Utilities;
 using Wattmate_Site.WDatabase;
+using Wattmate_Site.WDatabase.Queries;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wattmate_Site.DataProcessing

@@ -3,5 +3,6 @@
     public static class GlobalSettings
     {
         public static bool TestMode { get; set; } = true;
+        public static bool LocalMode { get; set; }
     }
 }

@@ -4,12 +4,21 @@ using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.Utilities;
 using Wattmate_Site.WDatabase;
+using Wattmate_Site.WDatabase.Interfaces;
+using Wattmate_Site.WDatabase.Queries;
 
 namespace Wattmate_Site.Devices
 {
     public class DeviceProcessor
     {
         public static Dictionary<string, DateTime> LastSeenDevices = new Dictionary<string, DateTime>();
+
+        private IWDatabaseQueries _db { get; set; }
+
+        public DeviceProcessor(IWDatabaseQueries db)
+        {
+            _db = db;
+        }
 
         public static void UpdateLastSeenDevices(string deviceId)
         {
@@ -25,13 +34,11 @@ namespace Wattmate_Site.Devices
 
         public void InsertNewTelemetry(TelemetryData reading)
         {
-            WDatabaseQueries _db = new();
             _db.InsertNewTelemetry(reading);
         }
 
         public void UpdateDoorStatus(DeviceDoorStatus request)
         {
-            WDatabaseQueries _db = new();
             _db.UpdateDoorStatus(request);
         }
 
@@ -48,7 +55,6 @@ namespace Wattmate_Site.Devices
  
         public void UpdateDeviceStatus(DeviceStatus status)
         {
-            WDatabaseQueries _db = new();
             _db.UpdateDeviceStatus(status);
         }
 
@@ -63,7 +69,6 @@ namespace Wattmate_Site.Devices
 
         public List<DeviceModel> GetUserDevices(string user_email)
         {
-            WDatabaseQueries _db = new WDatabaseQueries();
             DatabaseQueryResponse dbData = _db.GetUserDevices(user_email);
 
             List<DeviceModel> devices = new();
@@ -84,7 +89,9 @@ namespace Wattmate_Site.Devices
                 DeviceModel device = new DeviceModel();
                 device.DeviceId = DBUtils.FetchAsString(row["device_id"]);
                 device.DeviceName = DBUtils.FetchAsString(row["device_name"]);
+                device.UserId = DBUtils.FetchAsString(row["user_id"]);
                 device.Status = DBUtils.FetchAsString(row["status"]);
+
                 if (!LastSeenDevices.ContainsKey(device.DeviceId))
                 {
                     device.Online = false;

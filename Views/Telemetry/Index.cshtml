@@ -43,9 +43,9 @@
         window.location.href = "/";
     }
 
-    getFridgeTemperatureData();
+    getFridgeTelemetry();
 
-    async function getFridgeTemperatureData() {
+    async function getFridgeTelemetry() {
         let hidden = document.getElementById("DeviceId");
         let _deviceId = "NONE";
         if(hidden){
@@ -57,7 +57,7 @@
                      GroupingInterval: 10 }
 
         // Get 10 minutes intervals
-        const response = await fetch('/Telemetry/GetFridgeTemperatureData', {
+        const response = await fetch('/Telemetry/GetFridgeTelemetry', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -85,7 +85,7 @@
         }
 
         // send data
-        const response_1h = await fetch('/Telemetry/GetFridgeTemperatureData', {
+        const response_1h = await fetch('/Telemetry/GetFridgeTelemetry', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -1,4 +1,4 @@
-﻿@using Wattmate_Site.DataModels
+﻿@using Wattmate_Site.DataModels.DataTransferModels
 @model Wattmate_Site.Controllers.ViewModels.MainViewModel
 
 <body class="bg-light">
@@ -9,7 +9,7 @@
     <div class="container mt-4">
         <div class="row g-4">
             <!-- Device Card -->
-            @foreach(DeviceModel device in Model.Devices)
+            @foreach(DeviceModelDTO device in Model.Devices)
             {
                 <div class="col-12">
                     <div class="border p-4 bg-white rounded shadow-sm">

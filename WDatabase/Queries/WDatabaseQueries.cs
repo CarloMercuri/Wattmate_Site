@@ -2,11 +2,12 @@
 using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.Utilities;
+using Wattmate_Site.WDatabase.Interfaces;
 using Wattmate_Site.WDatabase.QueriesModels;
 
-namespace Wattmate_Site.WDatabase
+namespace Wattmate_Site.WDatabase.Queries
 {
-    public class WDatabaseQueries
+    public class WDatabaseQueries : IWDatabaseQueries
     {
         WDatabaseConnection _connection;
         public WDatabaseQueries()
@@ -14,7 +15,7 @@ namespace Wattmate_Site.WDatabase
             _connection = WDatabaseProcessor.GetDatabaseConnector();
         }
 
-      
+
 
         public void UpdateDeviceStatus(DeviceStatus status)
         {
@@ -22,10 +23,10 @@ namespace Wattmate_Site.WDatabase
                                             DBUtils.AddSqlParameter("@DeviceId", status.DeviceId),
                                             DBUtils.AddSqlParameter("@Status", status.Status));
         }
-      
+
         public DatabaseQueryResponse GetUserDevices(string email)
         {
-            return _connection.CallStoredProcedureWithData("GetDevicesByUserEmail", 
+            return _connection.CallStoredProcedureWithData("GetDevicesByUserEmail",
                                                     DBUtils.AddSqlParameter("@Email", email));
         }
 
@@ -37,25 +38,25 @@ namespace Wattmate_Site.WDatabase
                                     DBUtils.AddSqlParameter("@door_open", request.IsOpen));
         }
 
-        public DatabaseQueryResponse InsertNewTelemetry(TelemetryData reading) 
+        public DatabaseQueryResponse InsertNewTelemetry(TelemetryData reading)
         {
             DateTime s = DateTime.MinValue;
 
             if (DateTime.TryParse(reading.Timestamp, out DateTime parsed))
             {
-                 _connection.CallStoredProcedure("InsertFridgeTelemetry",
-                                    DBUtils.AddSqlParameter("@device_id", reading.DeviceId),
-                                    DBUtils.AddSqlParameter("@timestamp", reading.Timestamp),
-                                    DBUtils.AddSqlParameter("@temperature", reading.Temperature),
-                                    DBUtils.AddSqlParameter("@rele_active", reading.ReleActive),
-                                    DBUtils.AddSqlParameter("@kwh", reading.KwhReading));
-               
+                _connection.CallStoredProcedure("InsertFridgeTelemetry",
+                                   DBUtils.AddSqlParameter("@device_id", reading.DeviceId),
+                                   DBUtils.AddSqlParameter("@timestamp", reading.Timestamp),
+                                   DBUtils.AddSqlParameter("@temperature", reading.Temperature),
+                                   DBUtils.AddSqlParameter("@rele_active", reading.ReleActive),
+                                   DBUtils.AddSqlParameter("@kwh", reading.KwhReading));
+
 
                 return new DatabaseQueryResponse()
                 {
                     Success = true,
                 };
-                
+
             }
             else
             {

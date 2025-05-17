@@ -1,11 +1,12 @@
 ﻿using Wattmate_Site.DataModels;
+using Wattmate_Site.DataModels.DataTransferModels;
 
 namespace Wattmate_Site.Controllers.ViewModels
 {
     public class MainViewModel
     {
-        public UserModel UserData { get; set; }
+        public UserModelDTO UserData { get; set; }
      
-        public List<DeviceModel> Devices { get; set; }
+        public List<DeviceModelDTO> Devices { get; set; }
     }
 }

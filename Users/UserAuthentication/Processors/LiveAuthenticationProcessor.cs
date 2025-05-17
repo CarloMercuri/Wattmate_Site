@@ -63,7 +63,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
                 // Create user and password entry
                 UserModel m = new UserModel()
                 {
-                    UserEmail = loginData.UserEmail,
+                    UserName = loginData.UserEmail,
                     Name = loginData.Name,
                     Surname = loginData.Surname
                 };
@@ -79,7 +79,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
                     };
                 }
 
-                DatabaseQueryResponse passwordInserted = _db.InsertUpdatePassword(m.UserEmail,
+                DatabaseQueryResponse passwordInserted = _db.InsertUpdatePassword(m.UserName,
                                                                                   encryptionResult.PasswordData.HashedPassword,
                                                                                   encryptionResult.PasswordData.Salt,
                                                                                   encryptionResult.PasswordData.Iterations,
@@ -116,7 +116,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
         }
 
 
-        public UserAuthenticationRequestResult AuthenticateUser(string email, string password)
+        public UserAuthenticationRequestResult AuthenticateUser(string userName, string password)
         {
             UserAuthenticationRequestResult _result = new UserAuthenticationRequestResult();
             _result.UserData = null;
@@ -126,7 +126,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
             {
 
                 UsersDatabaseQueries _db = new UsersDatabaseQueries();
-                DatabaseQueryResponse _pw = _db.FetchActiveUserPassword(email);
+                DatabaseQueryResponse _pw = _db.FetchActiveUserPassword(userName);
 
                 if (!_pw.Success || _pw.Data.Rows.Count == 0)
                 {
@@ -160,7 +160,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
 
                 // SUCCESS
 
-                var dbUser = _db.GetUserData(email);
+                var dbUser = _db.GetUserData(userName);
 
                 return new UserAuthenticationRequestResult()
                 {

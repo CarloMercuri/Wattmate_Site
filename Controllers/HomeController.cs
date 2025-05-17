@@ -3,20 +3,25 @@ using System.Diagnostics;
 using Wattmate_Site.Controllers.Attributes;
 using Wattmate_Site.Controllers.ViewModels;
 using Wattmate_Site.DataModels;
+using Wattmate_Site.DataModels.DataTransferModels;
+using Wattmate_Site.DataModels.Translators;
 using Wattmate_Site.Devices;
 using Wattmate_Site.Models;
 using Wattmate_Site.Users.UserAuthentication.Extensions;
 using Wattmate_Site.Users.UserAuthentication.Interfaces;
 using Wattmate_Site.Users.UserAuthentication.Models;
+using Wattmate_Site.WDatabase.Interfaces;
 
 namespace Wattmate_Site.Controllers
 {
     public class HomeController : SecureAccessController
     {
         IWattmateAuthenticationService _authProcessor;
+        DeviceProcessor _deviceProcessor;
 
-        public HomeController(IWattmateAuthenticationService auth)
+        public HomeController(IWattmateAuthenticationService auth, IWDatabaseQueries db)
         {
+            _deviceProcessor = new DeviceProcessor(db);
            _authProcessor = auth;
         }
 
@@ -24,11 +29,13 @@ namespace Wattmate_Site.Controllers
         public IActionResult Index()
         {
             UserModel _authenticatedUser = HttpContext.Session.GetUserData();
-            DeviceProcessor _devicesProcessor = new DeviceProcessor();
 
             MainViewModel model = new MainViewModel();
-            model.UserData = _authenticatedUser;
-            model.Devices = _devicesProcessor.GetUserDevices(_authenticatedUser.UserEmail);
+            model.UserData = ModelsTranslator.ToDTO<UserModel, UserModelDTO>(_authenticatedUser);
+
+            List<DeviceModel> devices = _deviceProcessor.GetUserDevices(_authenticatedUser.UserName);
+            model.Devices = ModelsTranslator.ListToDTO<DeviceModel, DeviceModelDTO>(devices);
+
             return View(model);
         }
 
@@ -56,6 +63,7 @@ namespace Wattmate_Site.Controllers
             }
         }
 
+        [LocalModeOnly]
         [HttpPost]
         public IActionResult LoginApi([FromBody]UserLoginData _userData)
         {
@@ -79,6 +87,8 @@ namespace Wattmate_Site.Controllers
             return View(_status);
         }
 
+
+        [LocalModeOnly]
         [HttpPost]
         public IActionResult CreateNewUser([FromBody] UserLoginData data)
         {

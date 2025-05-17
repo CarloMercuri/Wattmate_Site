@@ -1,8 +1,6 @@
-﻿using Wattmate_Site.DataModels.Attributes;
-
-namespace Wattmate_Site.DataModels
+﻿namespace Wattmate_Site.DataModels.DataTransferModels
 {
-    public class DeviceModel
+    public class DeviceModelDTO
     {
         /// <summary>
         /// The global ID of the device
@@ -13,12 +11,6 @@ namespace Wattmate_Site.DataModels
         /// The Name of the device (editable by the user)
         /// </summary>
         public string DeviceName { get; set; }
-
-        /// <summary>
-        /// The internal ID of the user this device is attached to
-        /// </summary>
-        [HideFromDTO]
-        public string UserId { get; set; }
 
         /// <summary>
         /// Has the device been seen (api activity) recently

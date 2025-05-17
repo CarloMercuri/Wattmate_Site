@@ -1,18 +1,28 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using Wattmate_Site.Controllers.Attributes;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.Devices;
+using Wattmate_Site.WDatabase.Interfaces;
 using Wattmate_Site.WLog;
 
 namespace Wattmate_Site.Controllers.DeviceController
 {
-    public class DeviceController : ControllerBase
+    public class DeviceController : SecureAccessController
     {
 
+        DeviceProcessor _deviceProcessor;
 
+        public DeviceController(IWDatabaseQueries db)
+        {
+                _deviceProcessor = new DeviceProcessor(db);
+        }
+
+        [DeviceHmacAuthenticationRequired]
         [HttpPost]
         public async Task<IActionResult> GetStatus([FromBody] DevicePollRequest request)
         {
@@ -30,35 +40,11 @@ namespace Wattmate_Site.Controllers.DeviceController
             }
         }
 
-
+        [DeviceHmacAuthenticationRequired]
         [HttpPost]
         public async Task<IActionResult> Poll([FromBody] DevicePollRequest request)
         {
-            //
-            // AUTHENTICATION
-            //
-
-            //// 1. Get secret key for deviceId
-            //string secretKey = GetSecretKeyForDevice(request.DeviceId);
-            //if (secretKey == null)
-            //    return Unauthorized("Unknown device");
-
-            //// 2. Recreate the raw message that was signed
-            //string rawMessage = $"{request.DeviceId}|{request.Timestamp}|{JsonConvert.SerializeObject(request.Payload)}";
-
-            //// 3. Compute HMAC
-            //string computedHmac = ComputeHmacSha256(secretKey, rawMessage);
-
-            //// 4. Compare HMACs
-            //if (!SecureEquals(request.Hmac, computedHmac))
-            //    return Unauthorized("Invalid signature");
-
-            // 5. If valid, process the request
-            //
-            // PROCESSING
-            //
-
-
+           
             DeviceProcessor.UpdateLastSeenDevices(request.DeviceId);
 
             // Save it into pending requests
@@ -83,22 +69,32 @@ namespace Wattmate_Site.Controllers.DeviceController
             }
         }
 
+        [DeviceHmacAuthenticationRequired]
         [HttpPost]
         public IActionResult UpdateDoorStatus([FromBody] DeviceDoorStatus status)
         {
-            DeviceProcessor _proc = new();
-            _proc.UpdateDoorStatus(status);
-            return Ok();
+            try
+            {
+                _deviceProcessor.UpdateDoorStatus(status);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return base.StatusCode((int)HttpStatusCode.InternalServerError, "Internal error");
+                
+            }
+           
         }
 
+        [AuthenticationRequired]
         [HttpPost]
         public IActionResult RequestChangeDeviceStatus([FromBody] DeviceStatus status)
         {
-            DeviceProcessor _proc = new();
-            _proc.RequestDeviceStatuschange(status);
+            _deviceProcessor.RequestDeviceStatuschange(status);
             return Ok();
         }
 
+        [DeviceHmacAuthenticationRequired]
         [HttpPost]
         public IActionResult Telemetry([FromBody] TelemetryData reading)
         {
@@ -112,20 +108,20 @@ namespace Wattmate_Site.Controllers.DeviceController
                 obj = JsonConvert.SerializeObject(reading);
             }
             WLogging.Log($"SendKhwReading: reading object: " + obj);
-            DeviceProcessor _proc = new();
-            _proc.InsertNewTelemetry(reading);
+
+            _deviceProcessor.InsertNewTelemetry(reading);
             return Ok();
         }
 
+        [DeviceHmacAuthenticationRequired]
         [HttpPost]
         public IActionResult UpdateDeviceStatus([FromBody] DeviceStatus status)
         {
-            DeviceProcessor _proc = new();
-            _proc.UpdateDeviceStatus(status);
+            _deviceProcessor.UpdateDeviceStatus(status);
             return Ok();
         }
 
-        // Server (admin panel? mobile app?) triggers a command to a device
+        [LocalModeOnly]
         [HttpPost()]
         public IActionResult SendCommand([FromBody] DeviceCommandRequest request)
         {
@@ -137,65 +133,9 @@ namespace Wattmate_Site.Controllers.DeviceController
             return NotFound("Device not polling right now.");
         }
 
-        [HttpGet]
-        public IActionResult TestGet()
-        {
-            return Ok(new DeviceCommandResponse()
-            {
-                HasCommand = false,
-                Command = "Test command",
-                Expirationtime = 15000,
-                IssueDate = DateTime.Now,
+       
+        
 
-            });
-        }
-
-    /*
-     Arduino sends: 
-        {
-            "deviceId": "device-abc-123",
-            "timestamp": "2025-04-26T14:20:00Z",
-            "payload": {
-                // anything else you want to send
-            },
-            "hmac": "abc1234efg5678..."  // <- HMAC of deviceId + timestamp + payload
-        }
-     */
-
-
-
-        private string GetSecretKeyForDevice(string deviceId)
-        {
-            // TODO: Replace with real lookup (from database, config, etc.)
-            if (deviceId == "device-abc-123")
-                return "your-very-secret-key-1234567890"; // must match Arduino's key
-
-            return null;
-        }
-
-        private string ComputeHmacSha256(string secret, string message)
-        {
-            var keyBytes = Encoding.UTF8.GetBytes(secret);
-            var messageBytes = Encoding.UTF8.GetBytes(message);
-
-            using (var hmac = new HMACSHA256(keyBytes))
-            {
-                var hash = hmac.ComputeHash(messageBytes);
-                return Convert.ToHexString(hash).ToLower(); // hex lowercase output
-            }
-        }
-
-        private bool SecureEquals(string a, string b)
-        {
-            // Constant-time comparison to prevent timing attacks
-            if (a.Length != b.Length) return false;
-
-            int result = 0;
-            for (int i = 0; i < a.Length; i++)
-                result |= a[i] ^ b[i];
-
-            return result == 0;
-        }
     }
 
     //

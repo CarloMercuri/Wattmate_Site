@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Reflection;
 using Wattmate_Site.Controllers.Attributes;
+using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
+using Wattmate_Site.Security.DeviceAuthentication;
 using Wattmate_Site.Users.UserAuthentication.Extensions;
 using Wattmate_Site.Users.UserAuthentication.Models;
 
@@ -29,23 +31,44 @@ namespace Wattmate_Site.Controllers
                 }
             }
 
-            // Check the right permission
+            // Check if the endpoint needs to have a device HMAC authentication
 
-            //PermissionRequiredAttribute _permissionRequired = (PermissionRequiredAttribute)action.GetCustomAttribute(typeof(PermissionRequiredAttribute), true);
+            DeviceHmacAuthenticationRequiredAttribute _hmacAuthRequired = 
+                (DeviceHmacAuthenticationRequiredAttribute)action.GetCustomAttribute(typeof(DeviceHmacAuthenticationRequiredAttribute), true);
 
-            //if (_permissionRequired != null)
-            //{
-            //    if (_authenticatedUser == null)
-            //    {
-            //        context.Result = RedirectToAction("Login", "Home");
-
-            //    }
-            //    else if (_permissionRequired.RequiredRights > _authenticatedUser.UserRights)
-            //    {
-            //        context.Result = Json(new InsufficentRightsReturnModel() { Access = false, Message = "Insufficent rights to perform this action" });
-            //    }
-            //}
+            if (_hmacAuthRequired != null)
+            {
+                // Check if the HMAC is valid
+                if (!AuthenticateDevice(context))
+                {
+                    return;
+                }
+            }
             base.OnActionExecuting(context);
+        }
+
+        private bool AuthenticateDevice(ActionExecutingContext context)
+        {
+            // Try to get the DevicePollRequest from action arguments
+            if (context.ActionArguments.TryGetValue("request", out var requestObj) &&
+                requestObj is DevicePollRequest request)
+            {
+                var hmacValid = DeviceAuthenticationProcessor.IsDeviceGenuine(request);
+  
+                if (!hmacValid)
+                {
+                    context.Result = new UnauthorizedResult();
+                    return false;
+                }
+            }
+            else
+            {
+                context.Result = new BadRequestObjectResult("Invalid or missing request body.");
+                return false;
+            }
+
+            // If valid, process the request
+            return true;
         }
     }
 }
