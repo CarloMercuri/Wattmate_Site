@@ -2,6 +2,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using Wattmate_Site.Controllers.DeviceController;
+using Wattmate_Site.Utilities;
+using Wattmate_Site.WDatabase;
+using Wattmate_Site.WDatabase.Queries;
 
 namespace Wattmate_Site.Security.DeviceAuthentication
 {
@@ -18,25 +21,25 @@ namespace Wattmate_Site.Security.DeviceAuthentication
                    "hmac": "abc1234efg5678..."  // <- HMAC of deviceId + timestamp + payload
                }
         */
-        public static bool IsDeviceGenuine(DevicePollRequest request)
+        public static bool IsDeviceGenuine(string deviceId, string timestamp, string clientHmac)
         {
             //
             // AUTHENTICATION
             //
 
             // 1. Get secret key for deviceId
-            string secretKey = GetSecretKeyForDevice(request.DeviceId);
-            if (secretKey == null)
+            string secretKey = GetSecretKeyForDevice(deviceId);
+            if (string.IsNullOrEmpty(secretKey))
                 return false;
 
             // 2. Recreate the raw message that was signed
-            string rawMessage = $"{request.DeviceId}|{request.Timestamp}|{JsonConvert.SerializeObject(request.Payload)}";
+            string rawMessage = $"{deviceId}|{timestamp}|";
 
             // 3. Compute HMAC
             string computedHmac = ComputeHmacSha256(secretKey, rawMessage);
 
             // 4. Compare HMACs
-            if (!SecureEquals(request.Hmac, computedHmac))
+            if (!SecureEquals(clientHmac, computedHmac))
                 return false;
 
             return true;
@@ -45,11 +48,25 @@ namespace Wattmate_Site.Security.DeviceAuthentication
 
         private static string GetSecretKeyForDevice(string deviceId)
         {
-            // TODO: Replace with real lookup (from database, config, etc.)
-            if (deviceId == "device-abc-123")
-                return "your-very-secret-key-1234567890"; // must match Arduino's key
+            try
+            {
+                WDatabaseQueries _db = new();
+                DatabaseQueryResponse r = _db.GetDeviceHmac(deviceId);
 
-            return null;
+                if (!r.Success || r.Data.Rows.Count == 0)
+                {
+                    return "";
+                }
+
+                string hmac = DBUtils.FetchAsString(r.Data.Rows[0]["device_hmac"]);
+
+                return hmac;
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+           
         }
 
         private static string ComputeHmacSha256(string secret, string message)
@@ -66,7 +83,6 @@ namespace Wattmate_Site.Security.DeviceAuthentication
 
         private static bool SecureEquals(string a, string b)
         {
-            return true;
             // Constant-time comparison to prevent timing attacks
             if (a.Length != b.Length) return false;
 

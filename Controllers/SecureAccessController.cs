@@ -7,6 +7,7 @@ using Wattmate_Site.DataModels;
 using Wattmate_Site.Security.DeviceAuthentication;
 using Wattmate_Site.Users.UserAuthentication.Extensions;
 using Wattmate_Site.Users.UserAuthentication.Models;
+using Wattmate_Site.WLog;
 
 namespace Wattmate_Site.Controllers
 {
@@ -38,32 +39,29 @@ namespace Wattmate_Site.Controllers
 
             if (_hmacAuthRequired != null)
             {
-                // Check if the HMAC is valid
-                if (!AuthenticateDevice(context))
-                {
-                    return;
-                }
+                ////Check if the HMAC is valid
+                //if (!AuthenticateDevice(context))
+                //{
+                //    context.Result = new UnauthorizedResult();
+                //    return;
+                //}
             }
             base.OnActionExecuting(context);
         }
 
         private bool AuthenticateDevice(ActionExecutingContext context)
         {
-            // Try to get the DevicePollRequest from action arguments
-            if (context.ActionArguments.TryGetValue("request", out var requestObj) &&
-                requestObj is DevicePollRequest request)
+            string? hmacHeader = context.HttpContext.Request.Headers["X-Device-Hmac"].FirstOrDefault();
+            string? timeStampHeader = context.HttpContext.Request.Headers["X-Device-Timestamp"].FirstOrDefault();
+            string? idHeader = context.HttpContext.Request.Headers["X-Device-DeviceId"].FirstOrDefault();
+            WLogging.Log("ID:" + idHeader);
+            WLogging.Log("TS: " + timeStampHeader);
+            WLogging.Log("HMAC: " + hmacHeader);
+
+            var hmacValid = DeviceAuthenticationProcessor.IsDeviceGenuine(idHeader, timeStampHeader, hmacHeader);
+
+            if (!hmacValid)
             {
-                var hmacValid = DeviceAuthenticationProcessor.IsDeviceGenuine(request);
-  
-                if (!hmacValid)
-                {
-                    context.Result = new UnauthorizedResult();
-                    return false;
-                }
-            }
-            else
-            {
-                context.Result = new BadRequestObjectResult("Invalid or missing request body.");
                 return false;
             }
 

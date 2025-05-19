@@ -146,7 +146,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
 
 
                 // Decrypt the input password and match it with the stored one
-                IPasswordProcessor _crypto = AuthenticationManager.GetCurrentPasswordProcessor();
+                IPasswordProcessor _crypto = AuthenticationManager.GetAppropriatePasswordProcessor(pData.Algorithm);
                 bool encryptionResult = _crypto.VerifyPassword(password, pData.HashedPassword, pData.Salt, pData.Iterations);
 
                 if (!encryptionResult)
@@ -174,7 +174,7 @@ namespace Wattmate_Site.Users.UserAuthentication.Processors
             catch (Exception ex)
             {
                 _result.Success = false;
-                _result.Message = "Could not verify permissions.";
+                _result.Message = "Internal Error";
                 return _result;
             }
 

@@ -23,7 +23,7 @@ namespace Wattmate_Site.Controllers.DeviceController
                 _deviceProcessor = new DeviceProcessor(db);
         }
 
-        [DeviceHmacAuthenticationRequired]
+        //[DeviceHmacAuthenticationRequired]
         [HttpPost]
         public async Task<IActionResult> GetStatus([FromBody] DevicePollRequest request)
         {
@@ -66,7 +66,6 @@ namespace Wattmate_Site.Controllers.DeviceController
             {
                 // Timeout - no command
                 return NoContent();
-                //return NoContent(DeviceCommandResponse { HasCommand = false });
             }
         }
 
@@ -97,20 +96,29 @@ namespace Wattmate_Site.Controllers.DeviceController
 
         
         [HttpPost]
-        public IActionResult Telemetry([FromBody] TelemetryDataDTO reading)
+        public async Task<IActionResult> Telemetry([FromBody] TelemetryDataDTO reading)
         {
-            string obj = "";
-            if(reading is null)
+            try
             {
-                obj = "null";
-            }
-            else
-            {
-                obj = JsonConvert.SerializeObject(reading);
-            }
-            WLogging.Log($"SendKhwReading: reading object: " + obj);
+                string obj = "";
+                if (reading is null)
+                {
+                    obj = "null";
+                }
+                else
+                {
+                    obj = JsonConvert.SerializeObject(reading);
+                }
+                WLogging.Log($"SendKhwReading: reading object: " + obj);
 
-            _deviceProcessor.ProcessDeviceTelemetry(reading);
+                await _deviceProcessor.ProcessDeviceTelemetry(reading);
+            }
+            catch (Exception ex)
+            {
+                WLogging.Log($"TELEMETRY ERROR: " + ex.Message);
+                return base.StatusCode((int)HttpStatusCode.InternalServerError);
+            }
+          
 
 
             

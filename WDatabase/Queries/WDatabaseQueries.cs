@@ -26,6 +26,12 @@ namespace Wattmate_Site.WDatabase.Queries
                                             DBUtils.AddSqlParameter("@Status", status.Status));
         }
 
+        public DatabaseQueryResponse GetDeviceHmac(string deviceId)
+        {
+            return _connection.CallStoredProcedureWithData("GetDeviceHmacKey", 
+                                                        DBUtils.AddSqlParameter("@device_id", deviceId));
+        }
+
         public DatabaseQueryResponse GetFridgeTelemetry(string device_id, DateTime start, DateTime end)
         {
             return _connection.CallStoredProcedureWithData("GetFridgeTelemetry",

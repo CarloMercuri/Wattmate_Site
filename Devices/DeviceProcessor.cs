@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
@@ -15,7 +16,8 @@ namespace Wattmate_Site.Devices
     public class DeviceProcessor
     {
         public static Dictionary<string, DateTime> LastSeenDevices = new Dictionary<string, DateTime>();
-
+        public static ConcurrentDictionary<string, DateTime> LastProcessedDevices = new ConcurrentDictionary<string, DateTime>();
+        private TimeSpan ProcessingInterval = new TimeSpan(0, 30, 0);
         private IWDatabaseQueries _db { get; set; }
 
         public DeviceProcessor(IWDatabaseQueries db)
@@ -71,8 +73,22 @@ namespace Wattmate_Site.Devices
             return null;
         }
 
-        public void ProcessDeviceTelemetry(TelemetryDataDTO reading)
+        public async Task ProcessDeviceTelemetry(TelemetryDataDTO reading)
         {
+            InsertNewTelemetry(reading);
+            if (LastProcessedDevices.ContainsKey(reading.DeviceId)) // if its not even registered, then process
+            {
+                // if it's a different hour, process regardless because of new prices
+                if (LastProcessedDevices[reading.DeviceId].Hour == DateTime.Now.Hour) 
+                {
+                    // only process every x amount of time
+                    if(DateTime.Now - LastProcessedDevices[reading.DeviceId] < ProcessingInterval)
+                    {
+                        return;
+                    }
+                }
+            }
+
             TelemetryData fromDto = new TelemetryData()
             {
                 DeviceId = reading.DeviceId,
@@ -82,7 +98,7 @@ namespace Wattmate_Site.Devices
                 ReleActive = reading.ReleActive,
             };
 
-            InsertNewTelemetry(reading);
+        
             DatabaseQueryResponse dataResponse = _db.GetFridgeDeviceData(fromDto.DeviceId);
             if (!dataResponse.Success || dataResponse.Data.Rows.Count == 0) 
             {
@@ -100,12 +116,21 @@ namespace Wattmate_Site.Devices
             data.AvarageFallPerMinute = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["avarage_fall"]);
 
             // Return the request to the arduino, and then process in the background
-            Task t1 = Task.Run(() => { CalculateFridgeStatus(fromDto.DeviceId, data); });
+            //Task t1 = Task.Run(() => { CalculateFridgeStatus(fromDto.DeviceId, data, reading.ReleActive); });
+            await CalculateFridgeStatus(fromDto.DeviceId, data, reading.ReleActive);
 
         }
 
-        private async void CalculateFridgeStatus(string deviceId, FridgeDeviceData data)
+        private async Task CalculateFridgeStatus(string deviceId, FridgeDeviceData data, bool isReleActive)
         {
+            if (!LastProcessedDevices.ContainsKey(deviceId))
+            {
+                LastProcessedDevices.TryAdd(deviceId, DateTime.Now);
+            }
+            else
+            {
+                LastProcessedDevices[deviceId] = DateTime.Now;
+            }
             float minTemp = data.MinimumTemperature;
             float maxTemp = data.MaximumTemperature;
             float currentTemp = data.CurrentTemperature;
@@ -121,6 +146,7 @@ namespace Wattmate_Site.Devices
                     Command = "CLS_1"
                 };
                 DeviceRequestsProcessor.SendCommand(r);
+
                 // TURN OFF
                 return;
             }
@@ -146,7 +172,7 @@ namespace Wattmate_Site.Devices
             // Find the unit in the prices list that corresponds to NOW
             for (int i = 0; i < prices.Count; i++)
             {
-                if (prices[i].TimeStart < currentTime) 
+                if (prices[i].TimeStart < currentTime && prices[i].TimeEnd > currentTime) 
                 {
                     currentPriceIndex = i;
                     break;
