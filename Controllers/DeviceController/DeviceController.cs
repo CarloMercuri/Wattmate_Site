@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Wattmate_Site.Controllers.Attributes;
 using Wattmate_Site.DataModels;
+using Wattmate_Site.DataModels.DataTransferModels;
 using Wattmate_Site.Devices;
 using Wattmate_Site.WDatabase.Interfaces;
 using Wattmate_Site.WLog;
@@ -94,9 +95,9 @@ namespace Wattmate_Site.Controllers.DeviceController
             return Ok();
         }
 
-        [DeviceHmacAuthenticationRequired]
+        
         [HttpPost]
-        public IActionResult Telemetry([FromBody] TelemetryData reading)
+        public IActionResult Telemetry([FromBody] TelemetryDataDTO reading)
         {
             string obj = "";
             if(reading is null)
@@ -109,7 +110,10 @@ namespace Wattmate_Site.Controllers.DeviceController
             }
             WLogging.Log($"SendKhwReading: reading object: " + obj);
 
-            _deviceProcessor.InsertNewTelemetry(reading);
+            _deviceProcessor.ProcessDeviceTelemetry(reading);
+
+
+            
             return Ok();
         }
 

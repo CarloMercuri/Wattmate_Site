@@ -1,5 +1,6 @@
 ﻿using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
+using Wattmate_Site.DataModels.DataTransferModels;
 
 namespace Wattmate_Site.WDatabase.Interfaces
 {
@@ -8,10 +9,12 @@ namespace Wattmate_Site.WDatabase.Interfaces
         void UpdateDeviceStatus(DeviceStatus status);
 
         DatabaseQueryResponse GetUserDevices(string email);
+        DatabaseQueryResponse GetFridgeDeviceData(string deviceId);
+        DatabaseQueryResponse GetFridgeTelemetry(string device_id, DateTime start, DateTime end);
 
         DatabaseQueryResponse UpdateDoorStatus(DeviceDoorStatus request);
 
-        DatabaseQueryResponse InsertNewTelemetry(TelemetryData reading);
+        DatabaseQueryResponse InsertNewTelemetry(TelemetryDataDTO reading);
 
         DatabaseQueryResponse GetElectricityPrices(DateTime date, string zone);
 

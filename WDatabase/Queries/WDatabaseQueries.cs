@@ -1,6 +1,8 @@
 ﻿using System.Data;
 using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
+using Wattmate_Site.DataModels.DataTransferModels;
+using Wattmate_Site.DataModels.Devices;
 using Wattmate_Site.Utilities;
 using Wattmate_Site.WDatabase.Interfaces;
 using Wattmate_Site.WDatabase.QueriesModels;
@@ -24,6 +26,22 @@ namespace Wattmate_Site.WDatabase.Queries
                                             DBUtils.AddSqlParameter("@Status", status.Status));
         }
 
+        public DatabaseQueryResponse GetFridgeTelemetry(string device_id, DateTime start, DateTime end)
+        {
+            return _connection.CallStoredProcedureWithData("GetFridgeTelemetry",
+                                                        DBUtils.AddSqlParameter("@device_id", device_id),
+                                                        DBUtils.AddSqlParameter("@from", start),
+                                                        DBUtils.AddSqlParameter("@to", end));
+        }
+  
+        public DatabaseQueryResponse GetFridgeDeviceData(string deviceId)
+        {
+            return _connection.CallStoredProcedureWithData("GetFridgeDeviceSettings",
+                                                        DBUtils.AddSqlParameter("@device_id", deviceId));
+        }
+
+
+
         public DatabaseQueryResponse GetUserDevices(string email)
         {
             return _connection.CallStoredProcedureWithData("GetDevicesByUserEmail",
@@ -38,7 +56,7 @@ namespace Wattmate_Site.WDatabase.Queries
                                     DBUtils.AddSqlParameter("@door_open", request.IsOpen));
         }
 
-        public DatabaseQueryResponse InsertNewTelemetry(TelemetryData reading)
+        public DatabaseQueryResponse InsertNewTelemetry(TelemetryDataDTO reading)
         {
             DateTime s = DateTime.MinValue;
 

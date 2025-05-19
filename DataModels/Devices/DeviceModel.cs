@@ -1,6 +1,6 @@
 ﻿using Wattmate_Site.DataModels.Attributes;
 
-namespace Wattmate_Site.DataModels
+namespace Wattmate_Site.DataModels.Devices
 {
     public class DeviceModel
     {
@@ -26,8 +26,17 @@ namespace Wattmate_Site.DataModels
         public bool Online { get; set; }
 
         /// <summary>
+        /// Type (FRIDGE_1 for example)
+        /// </summary>
+        public string DeviceType { get; set; }
+
+
+        /// <summary>
         /// IS the relay active or not
         /// </summary>
         public string Status { get; set; }
+
+        [HideFromDTO]
+        public FridgeDeviceData FridgeDevice { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
+using Wattmate_Site.DataModels.DataTransferModels;
 using Wattmate_Site.WDatabase.Interfaces;
 
 namespace Wattmate_Site.WDatabase.Queries
@@ -7,6 +8,16 @@ namespace Wattmate_Site.WDatabase.Queries
     public class WLocalFileQueries : IWDatabaseQueries
     {
         public DatabaseQueryResponse GetElectricityPrices(DateTime date, string zone)
+        {
+            throw new NotImplementedException();
+        }
+
+        public DatabaseQueryResponse GetFridgeDeviceData(string deviceId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public DatabaseQueryResponse GetFridgeTelemetry(string device_id, DateTime start, DateTime end)
         {
             throw new NotImplementedException();
         }
@@ -21,7 +32,7 @@ namespace Wattmate_Site.WDatabase.Queries
             throw new NotImplementedException();
         }
 
-        public DatabaseQueryResponse InsertNewTelemetry(TelemetryData reading)
+        public DatabaseQueryResponse InsertNewTelemetry(TelemetryDataDTO reading)
         {
             throw new NotImplementedException();
         }

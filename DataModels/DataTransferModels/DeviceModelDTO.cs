@@ -21,5 +21,10 @@
         /// IS the relay active or not
         /// </summary>
         public string Status { get; set; }
+
+        /// <summary>
+        /// Type (FRIDGE_1 for example)
+        /// </summary>
+        public string DeviceType { get; set; }
     }
 }

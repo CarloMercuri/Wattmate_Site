@@ -4,6 +4,7 @@ using Wattmate_Site.Controllers.Attributes;
 using Wattmate_Site.Controllers.ViewModels;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.DataModels.DataTransferModels;
+using Wattmate_Site.DataModels.Devices;
 using Wattmate_Site.DataModels.Translators;
 using Wattmate_Site.Devices;
 using Wattmate_Site.Models;
