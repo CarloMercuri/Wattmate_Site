@@ -2,7 +2,41 @@
 
 @Html.Hidden("DeviceId", Model.DeviceId)
 
-<body class="bg-light" >
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="~/js/telemetry-charts.js" asp-append-version="true"></script>
+
+<!-- TOP ROW -->
+<div style="width: 100vw; display: flex; height: 50vh;">
+    <!-- Pre-Control graph -->
+    <div style="width: 45%; height: 100%; border: 1px solid rgb(200, 200, 200); border-right: 0; text-align: center;">
+        <h2>Uden styring</h2>
+        <div style="height: 300px; margin-top: 10px; margin-left: 10px;">
+            <canvas style="margin-left: 100px;" id="preStyringChart"></canvas>
+            <h3 id="date-h3">Start date: 2025-05-09 14:05</h3>
+            <div style="display: flex; width: 100%; justify-content: center;">
+                <button onclick="moveDates(true);" class="btn btn-sm btn-primary me-2">Tilbage</button>
+                <button onclick="moveDates(false);" class="btn btn-sm btn-primary me-2">Frem</button>
+            </div>
+            
+        </div>
+    </div>
+    <div style="width: 50%; height: 100%; border: 1px solid rgb(200, 200, 200); text-align: center;">
+        <h3>Med styring</h3>
+        <div style="height: 300px; margin-top: 10px; margin-left: 10px;">
+            <canvas id="medStyringChart"></canvas>
+        </div>
+    </div>
+</div>
+<!-- BOTTOM ROW -->
+<div style="width: 100vw; display: flex; height: 50vh">
+    <div style="width: 50%; height: 100%">
+    </div>
+    <div style="width: 50%;height: 100%">
+    </div>
+</div>
+
+
+@* <body class="bg-light" >
     <!-- Dates and periods buttons  -->
     <div style="margin-top: 80px;">
         <div class="d-inline-flex">
@@ -34,26 +68,53 @@
   
     
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
 </body>
-
+ *@
 <script>
+
+    Date.prototype.addHours = function (h) {
+        this.setTime(this.getTime() + (h * 60 * 60 * 1000));
+        return new Date(this);
+    }
 
     function backToMain(){
         window.location.href = "/";
     }
 
-    getFridgeTelemetry();
+    const range_hours = 6;
 
-    async function getFridgeTelemetry() {
+    const char_without = document.getElementById("preStyringChart")
+    const char_with = document.getElementById("medStyringChart")
+    const label_date = document.getElementById("date-h3");
+
+    let without_endDate = new Date()
+    let with_startDate = new Date("2025-05-19T12:00:00")
+    let chartElement = undefined;
+
+    getFridgeTelemetry(without_endDate, range_hours, chartElement);
+
+    function moveDates(back) {
+        if (back == true) {
+            without_endDate.addHours(-range_hours);
+        } else{
+            without_endDate.addHours(range_hours);
+        }
+
+        getFridgeTelemetry(without_endDate, range_hours, chartElement);
+    }
+
+    async function getFridgeTelemetry(endDate, range, chart) {
+        
+        let startDate = new Date(endDate.getTime() - range * 60 * 60 * 1000);
         let hidden = document.getElementById("DeviceId");
         let _deviceId = "NONE";
         if(hidden){
             _deviceId = hidden.value;
         }
         var body = { DeviceId: _deviceId, 
-                     StartDate: "2025-05-08 14:00", 
-                     EndDate: "2025-05-09 08:00", 
+                     StartDate: startDate, 
+                     EndDate: endDate, 
                      GroupingInterval: 10 }
 
         // Get 10 minutes intervals
@@ -74,68 +135,24 @@
 
         const apiData = await response.json();
 
-        var autos = document.getElementById("Appeitnsi");
-
-        // Get 1 hour intervals
-        var body_1h = {
-            DeviceId: _deviceId,
-            StartDate: "2025-05-08 14:00",
-            EndDate: "2025-05-09 08:00",
-            GroupingInterval: 10
-        }
-
-        // send data
-        const response_1h = await fetch('/Telemetry/GetFridgeTelemetry', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body_1h)
-        });
-
-        if (response_1h.status == 200) {
-
-        }
-        else {
-
-        }
-
-        const data_1h = await response_1h.json();
-
 
         let labels = [];
         let iData = [];
         let kwh = [];
         let cost = [];
-        let labels_1h = [];
-        let cost_1h = [];
         let prices = [];
 
         apiData.temperatureData.forEach(interval => {
             let start = new Date(interval.intervalStart);
-            labels.push(start.getHours() + ":" + start.getMinutes());
+            labels.push(formatTimeElement(start.getHours()) + ":" + formatTimeElement(start.getMinutes()));
             iData.push(interval.avarageIntervalTemperature);
             kwh.push(interval.kwhDelta);
             cost.push(interval.costInDkk);
         });
 
-        console.log(data_1h.prices);
-        data_1h.temperatureData.forEach(interval => {
-            let start = new Date(interval.intervalStart);
-            let end = new Date(interval.intervalEnd);
-            labels_1h.push(formatIntervalLabel(start, end));
-            cost_1h.push(interval.costInDkk);
-            // let foundPrice = data_1h.prices.find(x => new Date(x.timeStart).getTime() === start.getTime());
-            // if (foundPrice) {
-            //     prices.push(foundPrice.dkk);
-            // }
-        });
 
-
-        const ctx = document.getElementById('myChart');
-        const costchart = document.getElementById('costChart');
-        const totalCostLabel = document.getElementById('totalCost');
-        totalCostLabel.innerHTML = apiData.totalCost;
+        // const totalCostLabel = document.getElementById('totalCost');
+        // totalCostLabel.innerHTML = apiData.totalCost;
         
         const data = {
             labels: labels,
@@ -155,109 +172,70 @@
             ]
         };
 
-        const costData = {
-            labels: labels_1h,
-            datasets: [{
-                label: 'Dkk',
-                data: cost_1h,
-                fill: true,
-                borderColor: 'rgba(75, 192, 192, 0.8)',
-                tension: 0.1
-            },
-            {
-                label: 'Dkk',
-                type: 'line',
-                data: prices,
-                fill: true,
-                borderColor: 'rgba(75, 192, 192, 0.8)',
-                tension: 0.1
-            }
-            ]
-        };
+        if (chart == undefined) {
+            chartElement = initiateLineChart(char_without, data);
+        } else {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = iData;
+            chart.data.datasets[1].data = kwh;
+            chart.update();
+        }
 
-        let myBarChart = new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: '',
-                            font: {
-                                padding: 4,
-                                size: 20,
-                                weight: 'bold',
-                                family: 'Arial'
-                            },
-                            color: 'darkblue'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: '',
-                            font: {
-                                size: 20,
-                                weight: 'bold',
-                                family: 'Arial'
-                            },
-                            color: 'darkblue'
-                        },
-                        beginAtZero: true,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Values',
-                        }
-                    }
-                }
-            }
-        });
+       
+        label_date.innerHTML = "Start Date: " + formatDate(startDate);
+
 
         //
         // COST CHART
         //
 
-        let costChartD = new Chart(costChart, {
-            type: 'bar',
-            data: costData,
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: '',
-                            font: {
-                                padding: 4,
-                                size: 20,
-                                weight: 'bold',
-                                family: 'Arial'
-                            },
-                            color: 'darkblue'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: '',
-                            font: {
-                                size: 20,
-                                weight: 'bold',
-                                family: 'Arial'
-                            },
-                            color: 'darkblue'
-                        },
-                        beginAtZero: true,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Values',
-                        }
-                    }
-                }
+        // let costChartD = new Chart(costChart, {
+        //     type: 'bar',
+        //     data: costData,
+        //     options: {
+        //         responsive: true,
+        //         scales: {
+        //             x: {
+        //                 title: {
+        //                     display: true,
+        //                     text: '',
+        //                     font: {
+        //                         padding: 4,
+        //                         size: 20,
+        //                         weight: 'bold',
+        //                         family: 'Arial'
+        //                     },
+        //                     color: 'darkblue'
+        //                 }
+        //             },
+        //             y: {
+        //                 title: {
+        //                     display: true,
+        //                     text: '',
+        //                     font: {
+        //                         size: 20,
+        //                         weight: 'bold',
+        //                         family: 'Arial'
+        //                     },
+        //                     color: 'darkblue'
+        //                 },
+        //                 beginAtZero: true,
+        //                 scaleLabel: {
+        //                     display: true,
+        //                     labelString: 'Values',
+        //                 }
+        //             }
+        //         }
+        //     }
+        // });
+
+        function formatTimeElement(ele){
+            if (ele > 9) {
+                return ele;
+            } else {
+                return "0" + ele;
             }
-        });
+        }
 
         function formatIntervalLabel(startDate, endDate){
             let s_hours = startDate.getHours() > 9 ? startDate.getHours() : "0" + startDate.getHours();
@@ -267,6 +245,18 @@
           
 
             return s_hours + ":" + s_mins + " - " + e_hours + ":" + e_mins; 
+        }
+
+        function formatDate(date) {
+            const pad = (num) => String(num).padStart(2, '0');
+
+            const year = date.getFullYear();
+            const month = pad(date.getMonth() + 1); // Months are 0-indexed
+            const day = pad(date.getDate());
+            const hours = pad(date.getHours());
+            const minutes = pad(date.getMinutes());
+
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
         }
         
     }
