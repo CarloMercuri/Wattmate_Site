@@ -39,12 +39,12 @@ namespace Wattmate_Site.Controllers
 
             if (_hmacAuthRequired != null)
             {
-                ////Check if the HMAC is valid
-                //if (!AuthenticateDevice(context))
-                //{
-                //    context.Result = new UnauthorizedResult();
-                //    return;
-                //}
+                //Check if the HMAC is valid
+                if (!AuthenticateDevice(context))
+                {
+                    context.Result = new UnauthorizedResult();
+                    return;
+                }
             }
             base.OnActionExecuting(context);
         }
@@ -54,9 +54,7 @@ namespace Wattmate_Site.Controllers
             string? hmacHeader = context.HttpContext.Request.Headers["X-Device-Hmac"].FirstOrDefault();
             string? timeStampHeader = context.HttpContext.Request.Headers["X-Device-Timestamp"].FirstOrDefault();
             string? idHeader = context.HttpContext.Request.Headers["X-Device-DeviceId"].FirstOrDefault();
-            WLogging.Log("ID:" + idHeader);
-            WLogging.Log("TS: " + timeStampHeader);
-            WLogging.Log("HMAC: " + hmacHeader);
+       
 
             var hmacValid = DeviceAuthenticationProcessor.IsDeviceGenuine(idHeader, timeStampHeader, hmacHeader);
 

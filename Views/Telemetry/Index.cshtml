@@ -9,7 +9,7 @@
 <div style="width: 100vw; display: flex; height: 50vh;">
     <!-- Pre-Control graph -->
     <div style="width: 45%; height: 100%; border: 1px solid rgb(200, 200, 200); border-right: 0; text-align: center;">
-        <h2>Uden styring</h2>
+        <h2 id="label_cost"> </h2>
         <div style="height: 300px; margin-top: 10px; margin-left: 10px;">
             <canvas style="margin-left: 100px;" id="preStyringChart"></canvas>
             <h3 id="date-h3">Start date: 2025-05-09 14:05</h3>
@@ -21,9 +21,9 @@
         </div>
     </div>
     <div style="width: 50%; height: 100%; border: 1px solid rgb(200, 200, 200); text-align: center;">
-        <h3>Med styring</h3>
+        <h3>Dage omkostninger</h3>
         <div style="height: 300px; margin-top: 10px; margin-left: 10px;">
-            <canvas id="medStyringChart"></canvas>
+            <canvas id="omkostChart"></canvas>
         </div>
     </div>
 </div>
@@ -35,42 +35,6 @@
     </div>
 </div>
 
-
-@* <body class="bg-light" >
-    <!-- Dates and periods buttons  -->
-    <div style="margin-top: 80px;">
-        <div class="d-inline-flex">
-            <button class="btn btn-sm btn-primary me-2">Hourly</button>
-            <button class="btn btn-sm btn-primary">Daily</button>
-        </div>
-        <div>
-
-        </div>
-    </div>
-
-    <!-- Totals  -->
-    <div style="margin-left: 80px; " class="d-inline-flex">
-      
-        <div>
-            <h2>Total Cost:</h2>
-            <h2 id="totalCost"></h2>
-        </div>
-    
-    </div>
-    <div style="height: 300px; margin-top: 50px; margin-left: 0px;">
-        <canvas id="myChart"></canvas>
-    </div>
-
-    <div style="height: 300px; margin-top: 50px; margin-left: 0px;">
-        <canvas id="costChart"></canvas>
-    </div>
-   
-  
-    
-
-    
-</body>
- *@
 <script>
 
     Date.prototype.addHours = function (h) {
@@ -82,17 +46,25 @@
         window.location.href = "/";
     }
 
+    // DAYS COSTS
+    const char_cost = document.getElementById("omkostChart")
+    let cost_endDate = new Date();
+    let cost_daysBack = 7;
+    let costChartElement = undefined;
+
+    // TEMP/KWH GRAPH
+
     const range_hours = 6;
 
     const char_without = document.getElementById("preStyringChart")
-    const char_with = document.getElementById("medStyringChart")
     const label_date = document.getElementById("date-h3");
+    const label_cost = document.getElementById("label_cost");
 
     let without_endDate = new Date()
-    let with_startDate = new Date("2025-05-19T12:00:00")
     let chartElement = undefined;
 
     getFridgeTelemetry(without_endDate, range_hours, chartElement);
+    showDaysCostsData(cost_endDate, cost_daysBack, costChartElement);
 
     function moveDates(back) {
         if (back == true) {
@@ -102,6 +74,96 @@
         }
 
         getFridgeTelemetry(without_endDate, range_hours, chartElement);
+    }
+
+    async function showDaysCostsData(endDate, daysBack, chart) {
+        let data = [];
+
+        for(let i = 0; i < daysBack; i++ ){
+            let daysData = await getDaysCostData(endDate);
+            data.push({ day: new Date(daysData.day), cost: daysData.cost });
+            endDate.addHours(-24);
+        }
+
+
+
+        let labels = [];
+        let iData = [];
+
+        data.forEach(dayElement => {
+            labels.push(formatLabelDate(dayElement.day));
+            iData.push(dayElement.cost);
+        });
+
+        console.log(labels);
+        console.log(iData);
+
+        // const totalCostLabel = document.getElementById('totalCost');
+        // totalCostLabel.innerHTML = apiData.totalCost;
+
+        const chartData = {
+            labels: labels,
+            datasets: [{
+                label: 'DKK',
+                data: iData,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            }
+            ]
+        };
+
+        if (costChartElement == undefined) {
+            costChartElement = initiateBarChart(char_cost, chartData);
+        } else {
+            costChartElement.data.labels = labels;
+            costChartElement.data.datasets[0].data = iData;
+            costChartElement.update();
+        }
+
+
+
+        // END
+    }
+
+    async function getDaysCostData(date) {
+        let startDate = new Date(date);
+        let endDate = new Date(date);
+
+        startDate.setHours(0, 1, 0, 0);
+        endDate.setHours(23, 59, 0, 0);
+
+        let hidden = document.getElementById("DeviceId");
+        let _deviceId = "NONE";
+        if (hidden) {
+            _deviceId = hidden.value;
+        }
+        var body = {
+            DeviceId: _deviceId,
+            StartDate: startDate,
+            EndDate: endDate,
+            GroupingInterval: 10
+        }
+
+        // Get 10 minutes intervals
+        const response = await fetch('/Telemetry/GetFridgeTelemetry', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+
+        const apiData = await response.json();
+
+        return { day: date, cost: apiData.totalCost }
     }
 
     async function getFridgeTelemetry(endDate, range, chart) {
@@ -154,7 +216,7 @@
         // const totalCostLabel = document.getElementById('totalCost');
         // totalCostLabel.innerHTML = apiData.totalCost;
         
-        const data = {
+        const chartData = {
             labels: labels,
             datasets: [{
                 label: 'Temperature',
@@ -173,7 +235,7 @@
         };
 
         if (chart == undefined) {
-            chartElement = initiateLineChart(char_without, data);
+            chartElement = initiateLineChart(char_without, chartData);
         } else {
             chart.data.labels = labels;
             chart.data.datasets[0].data = iData;
@@ -183,51 +245,9 @@
 
        
         label_date.innerHTML = "Start Date: " + formatDate(startDate);
+        label_cost.innerHTML = "Period omkostninger: " + apiData.totalCost;
 
-
-        //
-        // COST CHART
-        //
-
-        // let costChartD = new Chart(costChart, {
-        //     type: 'bar',
-        //     data: costData,
-        //     options: {
-        //         responsive: true,
-        //         scales: {
-        //             x: {
-        //                 title: {
-        //                     display: true,
-        //                     text: '',
-        //                     font: {
-        //                         padding: 4,
-        //                         size: 20,
-        //                         weight: 'bold',
-        //                         family: 'Arial'
-        //                     },
-        //                     color: 'darkblue'
-        //                 }
-        //             },
-        //             y: {
-        //                 title: {
-        //                     display: true,
-        //                     text: '',
-        //                     font: {
-        //                         size: 20,
-        //                         weight: 'bold',
-        //                         family: 'Arial'
-        //                     },
-        //                     color: 'darkblue'
-        //                 },
-        //                 beginAtZero: true,
-        //                 scaleLabel: {
-        //                     display: true,
-        //                     labelString: 'Values',
-        //                 }
-        //             }
-        //         }
-        //     }
-        // });
+    }
 
         function formatTimeElement(ele){
             if (ele > 9) {
@@ -235,6 +255,14 @@
             } else {
                 return "0" + ele;
             }
+        }
+
+        function formatLabelDate(date) {
+           
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function formatIntervalLabel(startDate, endDate){
@@ -259,5 +287,6 @@
             return `${year}-${month}-${day} ${hours}:${minutes}`;
         }
         
-    }
+    
+    
 </script>

@@ -121,23 +121,33 @@ namespace Wattmate_Site.Devices
 
         }
 
+        /// <summary>
+        /// Calculates wether the fridge should turn on or off
+        /// </summary>
+        /// <param name="deviceId"></param>
+        /// <param name="data"></param>
+        /// <param name="isReleActive"></param>
+        /// <returns></returns>
         private async Task CalculateFridgeStatus(string deviceId, FridgeDeviceData data, bool isReleActive)
         {
+            // Update last processed, not to run this calculation too often
             if (!LastProcessedDevices.ContainsKey(deviceId))
-            {
                 LastProcessedDevices.TryAdd(deviceId, DateTime.Now);
-            }
             else
-            {
                 LastProcessedDevices[deviceId] = DateTime.Now;
-            }
+
+
             float minTemp = data.MinimumTemperature;
             float maxTemp = data.MaximumTemperature;
             float currentTemp = data.CurrentTemperature;
             float targetTemp = data.TargetTemperature;
+
+            // Calculated based on history
             float risePerMinute = data.AvarageRisePerMinute;
             float fallPerMinute = data.AvarageFallPerMinute;
 
+            // If the temperature is under the Minimum temperature, 
+            // turn it off regardless
             if (currentTemp < minTemp)
             {
                 DeviceCommandRequest r = new DeviceCommandRequest()
@@ -151,6 +161,8 @@ namespace Wattmate_Site.Devices
                 return;
             }
 
+            // If the temperature is above the maximum temperature,
+            // turn it on regardless 
             if (currentTemp > maxTemp)
             {
                 DeviceCommandRequest r = new DeviceCommandRequest()
@@ -159,12 +171,15 @@ namespace Wattmate_Site.Devices
                     Command = "ACT_1"
                 };
                 DeviceRequestsProcessor.SendCommand(r);
+
                 // TURN ON
                 return;
             }
 
+            // Get prices for today and tomorrow (if available)
             PricesProcessor pp = new PricesProcessor();
             List<ElectricityPriceUnit> prices = await pp.GetDaysPrices([DateTime.Now, DateTime.Now.AddDays(1)], "DK2");
+
 
             DateTime currentTime = DateTime.Now;
             int currentPriceIndex = 0;
@@ -179,13 +194,33 @@ namespace Wattmate_Site.Devices
                 }
             }
 
+            // Calculate how long (in minutes) it will take to reach max and minimum temperature
             int untilTooWarm = (int)(Math.Abs(maxTemp - currentTemp) / risePerMinute);
             int untillTooCold = (int)(Math.Abs(minTemp - currentTemp) / fallPerMinute);
 
+            // Now we find out if better prices are coming BEFORE the fridge 
+            // will get too warm / too cold
+            
             bool comingCheaper = false;
 
-            // BETTER CALCUALATION OF HOURS (ex now if its 118 minutes, itll say 1 hour)
-            for (int i = currentPriceIndex; i < prices.Count || i < (untilTooWarm / 60); i++) 
+
+            // Calculating how many price units (hours) ahead we need to look.
+            // If it's very close to the next hour (within 10 minutes), then we can wait
+            // Minutes: 60, Result: 1
+            // Minutes: 80, Result: 1
+            // Minutes 101: Result: 1
+            // Minutes 118: Result: 2
+            // Minutes 128: Result: 2
+            // Minutes 161: Result: 2
+            // Minutes 174: Result: 3
+            int remaining = untilTooWarm % 60;
+            int result = untilTooWarm / 60;
+            if (remaining > 50) result++;            
+
+
+
+            
+            for (int i = currentPriceIndex; i < prices.Count || i < result; i++) 
             {
                 if (prices[i].DKK < prices[currentPriceIndex].DKK) 
                 {
@@ -193,25 +228,27 @@ namespace Wattmate_Site.Devices
                 }
             }
 
+            
             if (comingCheaper) 
             {
+                // Better prices are coming, let's turn it off and wait.
                 DeviceCommandRequest r = new DeviceCommandRequest()
                 {
                     DeviceId = deviceId,
                     Command = "CLS_1"
                 };
                 DeviceRequestsProcessor.SendCommand(r);
-                // TURN OFF
+               
             }
             else
             {
+                // No better prices are coming, so we turn it on now.
                 DeviceCommandRequest r = new DeviceCommandRequest()
                 {
                     DeviceId = deviceId,
                     Command = "ACT_1"
                 };
                 DeviceRequestsProcessor.SendCommand(r);
-                // TURN ON
             }
 
             return;
