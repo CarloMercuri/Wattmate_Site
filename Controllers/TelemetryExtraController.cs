@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Wattmate_Site.Controllers.Attributes;
 using Wattmate_Site.Controllers.ViewModels;
+using Wattmate_Site.DataModels.Devices;
 using Wattmate_Site.Devices;
 using Wattmate_Site.WDatabase.Interfaces;
 
@@ -42,16 +43,17 @@ namespace Wattmate_Site.Controllers
         }
 
         [HttpPost]
-        public IActionResult SaveVariables([FromBody] VariablesCalculationRequest request)
+        public IActionResult CalculateVariables([FromBody] VariablesCalculationRequest request)
         {
-            _deviceProcessor.CalculateVariables(request);
-            return Ok();
+            FridgeDeviceData newData = _deviceProcessor.CalculateVariables(request);
+            return Json(newData);
         }
 
     }
 
     public class VariablesCalculationRequest
     {
+        public string DeviceId { get; set; }
         public string TimePointA { get; set; }
         public string TimePointB { get; set; }
     }

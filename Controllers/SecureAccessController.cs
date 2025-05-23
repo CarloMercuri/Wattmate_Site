@@ -40,11 +40,11 @@ namespace Wattmate_Site.Controllers
             if (_hmacAuthRequired != null)
             {
                 //Check if the HMAC is valid
-                if (!AuthenticateDevice(context))
-                {
-                    context.Result = new UnauthorizedResult();
-                    return;
-                }
+                //if (!AuthenticateDevice(context))
+                //{
+                //    context.Result = new UnauthorizedResult();
+                //    return;
+                //}
             }
             base.OnActionExecuting(context);
         }

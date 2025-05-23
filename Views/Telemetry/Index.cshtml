@@ -49,7 +49,7 @@
     // DAYS COSTS
     const char_cost = document.getElementById("omkostChart")
     let cost_endDate = new Date();
-    let cost_daysBack = 7;
+    let cost_daysBack = 11;
     let costChartElement = undefined;
 
     // TEMP/KWH GRAPH
@@ -84,6 +84,8 @@
             data.push({ day: new Date(daysData.day), cost: daysData.cost });
             endDate.addHours(-24);
         }
+
+     
 
 
 

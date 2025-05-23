@@ -166,17 +166,27 @@
     async function calculateVariables() {
         if(selectedPoints.length < 2){
             alert("No period selected");
+            return;
+        }
+
+        let tA = selectedPoints[0].time.length > 7 ? selectedPoints[0].time: displayFormattedDate(new Date(selectedPoints[0].date), true) + " " + selectedPoints[0].time;
+        let tB = selectedPoints[1].time.length > 7 ? selectedPoints[1].time: displayFormattedDate(new Date(selectedPoints[1].date), true) + " " + selectedPoints[1].time;
+
+        let hidden = document.getElementById("DeviceId");
+        let _deviceId = "NONE";
+        if (hidden) {
+            _deviceId = hidden.value;
         }
 
         var body = {
-            TimePointA: selectedPoints[0],
-            TimePointB: selectedPoints[1],
+            DeviceId : _deviceId,
+            TimePointA: tA,
+            TimePointB: tB
         }
 
+        console.log(body)
 
-
-        // Get 10 minutes intervals
-        const response = await fetch('/Prices/GetPricesForDays', {
+        const response = await fetch('/TelemetryExtra/CalculateVariables', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -191,7 +201,13 @@
 
         }
 
+        let rise = document.getElementById('temp_rise');
+        let fall = document.getElementById('temp_fall');
+
         const apiData = await response.json();
+
+        rise.value = apiData.avarageRisePerMinute.toFixed(2);
+        fall.value = apiData.avarageFallPerMinute.toFixed(2);
     }
 
 
@@ -435,7 +451,7 @@
         return `${hours}:${minutes}`;
     }
 
-    function displayFormattedDate(date) {
+    function displayFormattedDate(date, onlyDate) {
      
             const pad = (num) => String(num).padStart(2, '0');
 
@@ -445,7 +461,11 @@
             const hours = pad(date.getHours());
             const minutes = pad(date.getMinutes());
 
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
+            if(!onlyDate){
+                return `${year}-${month}-${day} ${hours}:${minutes}`;
+            } else {
+                return `${year}-${month}-${day}`;
+            }
         }
 
 

@@ -1,6 +1,8 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.Runtime.InteropServices.Marshalling;
 using Wattmate_Site.Controllers;
 using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
@@ -255,9 +257,137 @@ namespace Wattmate_Site.Devices
             return data;
         }
 
-        public void CalculateVariables(VariablesCalculationRequest request)
+        public FridgeDeviceData CalculateVariables(VariablesCalculationRequest request)
         {
-            //DateTime p1 = DateTime.Parse
+            DateTime d1 = DateTime.Parse(request.TimePointA);
+            DateTime d2 = DateTime.Parse(request.TimePointB);
+
+            // d1 needs to be before d2
+            if(d1 > d2)
+            {
+                DateTime dT = new DateTime(d1.Year, d1.Month, d1.Day, d1.Hour, d1.Minute, d1.Second);
+                d1 = new DateTime(d2.Year, d2.Month, d2.Day, d2.Hour, d2.Minute, d2.Second);
+                d2 = dT;
+            }
+
+            // Get telemetry data 
+            DatabaseQueryResponse r = _db.GetFridgeTelemetry(request.DeviceId, d1, d2);
+            if (!r.Success || r.Data.Rows.Count == 0) return null;
+
+            List<TelemetryData> telemetry = new List<TelemetryData>();
+
+            foreach (DataRow row in r.Data.Rows)
+            {
+                TelemetryData d = new TelemetryData();
+                d.DeviceId = request.DeviceId;
+                d.Temperature = DBUtils.FetchAsFloat(row["temperature"]);
+                d.Timestamp = DBUtils.FetchAsDateTime(row["timestamp"], DateTime.MinValue);
+                telemetry.Add(d);
+            }
+
+            telemetry.Reverse();
+
+            int index = 0;
+            List<TelemetryWaveGroup> RisingWaves = new List<TelemetryWaveGroup>();
+            List<TelemetryWaveGroup> FallingWaves = new List<TelemetryWaveGroup>();
+            PeakTroughPoint lowestFound = null;
+            PeakTroughPoint highestFound = null;
+            TelemetryData reading = telemetry[0];
+            bool rising = true;
+
+            // Find if we're rising or falling first
+            if (telemetry[1].Temperature > reading.Temperature)
+            {
+                rising = true;
+                lowestFound = new PeakTroughPoint() { Time = reading.Timestamp, Temperature = reading.Temperature };
+
+            }
+            else
+            {
+                rising = false;
+                highestFound = new PeakTroughPoint() { Time = reading.Timestamp, Temperature = reading.Temperature };
+            }
+
+            for (int i = 1; i < telemetry.Count; i++)
+            {
+                if (telemetry[i].Temperature < reading.Temperature)
+                {
+                    reading = telemetry[i];
+                    if (rising)
+                    {
+                        RisingWaves.Add(new TelemetryWaveGroup()
+                        {
+                            PointA = new PeakTroughPoint(lowestFound.Time, lowestFound.Temperature),
+                            PointB = new PeakTroughPoint(telemetry[i - 1].Timestamp, telemetry[i - 1].Temperature)                        
+                        });
+
+                        highestFound = new PeakTroughPoint(telemetry[i - 1].Timestamp, telemetry[i - 1].Temperature);
+                        rising = false;
+                    } // else continue
+                }
+                else if (telemetry[i].Temperature > reading.Temperature) 
+                {
+                    reading = telemetry[i];
+                    if (!rising)
+                    {
+                        FallingWaves.Add(new TelemetryWaveGroup()
+                        {
+                            PointA = new PeakTroughPoint(highestFound.Time, highestFound.Temperature),
+                            PointB = new PeakTroughPoint(telemetry[i - 1].Timestamp, telemetry[i - 1].Temperature)
+                        });
+
+                        lowestFound = new PeakTroughPoint(telemetry[i - 1].Timestamp, telemetry[i - 1].Temperature);
+                        rising = true;
+                    }
+                }
+            }
+
+            // calculate fall rate
+
+            List<double> fallRatios = new();
+
+            foreach(TelemetryWaveGroup fallGroup in FallingWaves)
+            {
+                // Sometimes it groups up points close to each other due to fluctuations
+                if (Math.Abs(fallGroup.PointA.Temperature - fallGroup.PointB.Temperature) < 2) continue;
+
+                TimeSpan minutes = fallGroup.PointA.Time.TimeOfDay - fallGroup.PointB.Time.TimeOfDay;
+                double ratio = (fallGroup.PointA.Temperature - fallGroup.PointB.Temperature) / minutes.TotalMinutes;
+                fallRatios.Add(ratio);
+            }
+
+            // calculate rise rate
+
+            List<double> riseRatios = new();
+
+            foreach (TelemetryWaveGroup riseGroup in RisingWaves)
+            {
+                // Sometimes it groups up points close to each other due to fluctuations
+                if (Math.Abs(riseGroup.PointA.Temperature - riseGroup.PointB.Temperature) < 2) continue;
+
+                TimeSpan minutes = riseGroup.PointB.Time.TimeOfDay - riseGroup.PointA.Time.TimeOfDay;
+                double ratio = (riseGroup.PointB.Temperature - riseGroup.PointA.Temperature) / minutes.TotalMinutes;
+                riseRatios.Add(ratio);
+            }
+
+            double avarageFall = 0;
+            if(fallRatios.Count > 0)
+            {
+                avarageFall = fallRatios.Sum() / fallRatios.Count;
+            }
+
+            double avarageRise = 0;
+            if(riseRatios.Count > 0)
+            {
+                avarageRise = riseRatios.Sum() / riseRatios.Count;
+            }
+         
+
+            return new FridgeDeviceData()
+            {
+                AvarageFallPerMinute = Math.Abs((float)avarageRise),
+                AvarageRisePerMinute = Math.Abs((float)avarageFall)
+            };
         }
 
         private void CalculateAvarages(string deviceId, FridgeDeviceData data)
