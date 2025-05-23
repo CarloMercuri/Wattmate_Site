@@ -1,4 +1,5 @@
-﻿using Wattmate_Site.Controllers.DeviceController;
+﻿using Wattmate_Site.Controllers;
+using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.DataModels.DataTransferModels;
 using Wattmate_Site.WDatabase.Interfaces;
@@ -33,6 +34,16 @@ namespace Wattmate_Site.WDatabase.Queries
         }
 
         public DatabaseQueryResponse InsertNewTelemetry(TelemetryDataDTO reading)
+        {
+            throw new NotImplementedException();
+        }
+
+        public DatabaseQueryResponse SaveTempData(TempDataRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public DatabaseQueryResponse SaveVariables(VariablesRequest request)
         {
             throw new NotImplementedException();
         }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using Wattmate_Site.Controllers;
 using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.DataModels.DataTransferModels;
@@ -17,7 +18,7 @@ namespace Wattmate_Site.Devices
     {
         public static Dictionary<string, DateTime> LastSeenDevices = new Dictionary<string, DateTime>();
         public static ConcurrentDictionary<string, DateTime> LastProcessedDevices = new ConcurrentDictionary<string, DateTime>();
-        private TimeSpan ProcessingInterval = new TimeSpan(0, 30, 0);
+        private TimeSpan ProcessingInterval = new TimeSpan(0, 5, 0);
         private IWDatabaseQueries _db { get; set; }
 
         public DeviceProcessor(IWDatabaseQueries db)
@@ -64,15 +65,7 @@ namespace Wattmate_Site.Devices
             _db.UpdateDeviceStatus(status);
         }
 
-        private string GetSecretKeyForDevice(string deviceId)
-        {
-            // 🔥 TODO: Replace with real lookup (from database, config, etc.)
-            if (deviceId == "device-abc-123")
-                return "your-very-secret-key-1234567890"; // must match Arduino's key
-
-            return null;
-        }
-
+      
         public async Task ProcessDeviceTelemetry(TelemetryDataDTO reading)
         {
             InsertNewTelemetry(reading);
@@ -98,22 +91,8 @@ namespace Wattmate_Site.Devices
                 ReleActive = reading.ReleActive,
             };
 
-        
-            DatabaseQueryResponse dataResponse = _db.GetFridgeDeviceData(fromDto.DeviceId);
-            if (!dataResponse.Success || dataResponse.Data.Rows.Count == 0) 
-            {
-                return;
-            }
 
- 
-            FridgeDeviceData data = new FridgeDeviceData();
-
-            data.MinimumTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["min_temp"]);
-            data.MaximumTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["max_temp"]);
-            data.CurrentTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["current_temperature"]);
-            data.TargetTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["target_temp"]);
-            data.AvarageRisePerMinute = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["avarage_rise"]);
-            data.AvarageFallPerMinute = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["avarage_fall"]);
+            FridgeDeviceData data = GetFridgeData(reading.DeviceId);
 
             // Return the request to the arduino, and then process in the background
             //Task t1 = Task.Run(() => { CalculateFridgeStatus(fromDto.DeviceId, data, reading.ReleActive); });
@@ -255,6 +234,32 @@ namespace Wattmate_Site.Devices
 
         }
 
+        public FridgeDeviceData GetFridgeData(string deviceId)
+        {
+            DatabaseQueryResponse dataResponse = _db.GetFridgeDeviceData(deviceId);
+            if (!dataResponse.Success || dataResponse.Data.Rows.Count == 0)
+            {
+                return null;
+            }
+
+
+            FridgeDeviceData data = new FridgeDeviceData();
+
+            data.MinimumTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["min_temp"]);
+            data.MaximumTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["max_temp"]);
+            data.CurrentTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["current_temperature"]);
+            data.TargetTemperature = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["target_temp"]);
+            data.AvarageRisePerMinute = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["avarage_rise"]);
+            data.AvarageFallPerMinute = DBUtils.FetchAsFloat(dataResponse.Data.Rows[0]["avarage_fall"]);
+
+            return data;
+        }
+
+        public void CalculateVariables(VariablesCalculationRequest request)
+        {
+            //DateTime p1 = DateTime.Parse
+        }
+
         private void CalculateAvarages(string deviceId, FridgeDeviceData data)
         {
             return;
@@ -320,6 +325,18 @@ namespace Wattmate_Site.Devices
 
                 //}
             }
+        }
+
+        public bool SaveTempData(TempDataRequest request)
+        {
+            DatabaseQueryResponse resp = _db.SaveTempData(request);
+            return resp.Success;
+        }
+
+        public bool SaveVariables(VariablesRequest request)
+        {
+            DatabaseQueryResponse resp = _db.SaveVariables(request);
+            return resp.Success;
         }
 
         public List<DeviceModel> GetUserDevices(string user_email)

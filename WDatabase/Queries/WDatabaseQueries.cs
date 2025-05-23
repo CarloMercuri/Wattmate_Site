@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Wattmate_Site.Controllers;
 using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.DataModels.DataTransferModels;
@@ -46,7 +47,26 @@ namespace Wattmate_Site.WDatabase.Queries
                                                         DBUtils.AddSqlParameter("@device_id", deviceId));
         }
 
+        public DatabaseQueryResponse SaveTempData(TempDataRequest request)
+        {
+            string query = $"UPDATE FridgeDeviceData SET min_temp = @min, max_temp = @max, target_temp = @target " +
+                           $"WHERE device_id = @id";
+            return _connection.SendNonQuery(query, 
+                                            DBUtils.AddSqlParameter("@min", request.MinTemp),
+                                            DBUtils.AddSqlParameter("@target", request.TargetTemp),
+                                            DBUtils.AddSqlParameter("@max", request.MaxTemp),
+                                            DBUtils.AddSqlParameter("@id", request.DeviceId));
+        }
 
+        public DatabaseQueryResponse SaveVariables(VariablesRequest request)
+        {
+            string query = $"UPDATE FridgeDeviceData SET avarage_fall = @fall, avarage_rise = @rise " +
+                           $"WHERE device_id = @id";
+            return _connection.SendNonQuery(query,
+                                            DBUtils.AddSqlParameter("@fall", request.FallRatio),
+                                            DBUtils.AddSqlParameter("@rise", request.RiseRatio),
+                                            DBUtils.AddSqlParameter("@id", request.DeviceId));
+        }
 
         public DatabaseQueryResponse GetUserDevices(string email)
         {

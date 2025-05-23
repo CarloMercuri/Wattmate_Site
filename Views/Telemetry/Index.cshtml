@@ -166,6 +166,11 @@
         return { day: date, cost: apiData.totalCost }
     }
 
+    function chartCallback(label, value){
+        console.log(label);
+        console.log(value);
+    }
+
     async function getFridgeTelemetry(endDate, range, chart) {
         
         let startDate = new Date(endDate.getTime() - range * 60 * 60 * 1000);
@@ -235,7 +240,7 @@
         };
 
         if (chart == undefined) {
-            chartElement = initiateLineChart(char_without, chartData);
+            chartElement = initiateLineChart(char_without, chartData, chartCallback);
         } else {
             chart.data.labels = labels;
             chart.data.datasets[0].data = iData;

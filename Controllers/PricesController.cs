@@ -26,6 +26,15 @@ namespace Wattmate_Site.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> GetPricesForDays([FromBody] DaysPricesRequest request)
+        {
+            PricesProcessor p = new PricesProcessor();
+            var prices = await p.GetDaysPrices(request.Dates, "DK2");
+            return Ok(prices);
+
+        }
+
+        [HttpPost]
         public async Task<IActionResult> GetTodayPrices([FromBody] DevicePollRequest request)
         {
             PricesProcessor p = new PricesProcessor();
@@ -57,5 +66,10 @@ namespace Wattmate_Site.Controllers
 
             return View(model);
         }
+    }
+
+    public class DaysPricesRequest
+    {
+        public List<DateTime> Dates { get; set; } = new();
     }
 }

@@ -1,4 +1,5 @@
-﻿using Wattmate_Site.Controllers.DeviceController;
+﻿using Wattmate_Site.Controllers;
+using Wattmate_Site.Controllers.DeviceController;
 using Wattmate_Site.DataModels;
 using Wattmate_Site.DataModels.DataTransferModels;
 
@@ -15,6 +16,8 @@ namespace Wattmate_Site.WDatabase.Interfaces
         DatabaseQueryResponse UpdateDoorStatus(DeviceDoorStatus request);
 
         DatabaseQueryResponse InsertNewTelemetry(TelemetryDataDTO reading);
+        DatabaseQueryResponse SaveTempData(TempDataRequest request);
+        DatabaseQueryResponse SaveVariables(VariablesRequest request);
 
         DatabaseQueryResponse GetElectricityPrices(DateTime date, string zone);
 

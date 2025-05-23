@@ -1,0 +1,525 @@
+﻿@model Wattmate_Site.Controllers.ViewModels.ExtraTelemetryViewModel
+
+@Html.Hidden("DeviceId", Model.DeviceId)
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="~/js/telemetry-charts.js" asp-append-version="true"></script>
+
+<!-- LEFT SIDE -->
+<div style="width: 100vw; display: flex; height: 50vh;">
+    <!-- Pre-Control graph -->
+    <div style="width: 50%; height: 100%;  text-align: center;">
+        <h2 id="label_cost"> </h2>
+        <div style="height: 300px; width: 100%; margin-top: 10px; margin-left: 10px;">
+            <canvas style="margin-left: 100px;" id="mainChart"></canvas>
+            <canvas style="margin-left: 100px;" id="pricesChart"></canvas>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 id="date-h3">Start date: 2025-05-09 14:05</h3>
+                    <div style="display: flex; width: 100%; justify-content: center;">
+                        <button onclick="moveDates(true);" class="btn btn-sm btn-primary me-2">Tilbage</button>
+                        <button onclick="moveDates(false);" class="btn btn-sm btn-primary me-2">Frem</button>
+                    </div>
+                    <!-- Date -->
+                    <div class="form-group mb-3">
+                        <label for="target_date" class="form-label">Dato</label>
+                        <input type="date" id="target_date" class="form-control" aria-label="Dato">
+                    </div>
+                </<div>
+            </div>
+        </div>
+
+    </div>
+</div>
+    <div style="">
+        <!-- Data and Inputs card -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="mb-1">
+                    <h3>Data</h3>
+                </div>                        
+                <!-- CUR TEMP -->
+                <div class="input-group mb-3">
+                        <span style="width: 110px;" class="input-group-text" id="basic-addon3">Cur. Temp</span>
+                        <input disabled style="width: 70px;" type="text" class="form-control"
+                               id="basic-url" aria-describedby="basic-addon3" value="@Model.FridgeData.CurrentTemperature">
+                        <span class="input-group-text">°C</span>
+                </div>
+                <!-- MIN TEMP -->
+                <div class="input-group mb-3">
+                        <span style="width: 110px;" class="input-group-text" id="basic-addon3">Min. Temp</span>
+                    <input  style="width: 70px;" type="text" class="form-control"
+                               id="min_temp" aria-describedby="basic-addon3" value="@Model.FridgeData.MinimumTemperature">
+                        <span class="input-group-text">°C</span>
+                </div>
+                    <!-- TARGET TEMP -->
+                    <div class="input-group mb-3">
+                        <span style="width: 110px;" class="input-group-text" id="basic-addon3">Target Temp</span>
+                        <input style="width: 70px;" type="text" class="form-control"
+                               id="target_temp" aria-describedby="basic-addon3" value="@Model.FridgeData.TargetTemperature">
+                        <span class="input-group-text">°C</span>
+                    </div>
+                <!-- MAX TEMP -->
+                <div class="input-group mb-3">
+                        <span style="width: 110px;" class="input-group-text" id="basic-addon3">Max. Temp</span>
+                    <input style="width: 70px;" type="text" class="form-control"
+                               id="max_temp" aria-describedby="basic-addon3" value="@Model.FridgeData.MaximumTemperature">
+                        <span class="input-group-text">°C</span>
+                </div>
+                    <div style="text-align: right">
+                        <button onclick="saveTempData()" class="btn btn-outline-success">Save</button>
+                    </div>
+
+                <!-- VARIABLES -->
+                    <div class="mb-1">
+                        <h3>VARIABLES</h3>
+                    </div>
+                    <!-- FALL RATE -->
+                    <div class="input-group mb-3">
+                        <span style="width: 33%" class="input-group-text" id="basic-addon3">Fall ratio</span>
+                        <input style="width: 70px;" type="text" class="form-control"
+                               id="temp_rise" aria-describedby="basic-addon3" value="@Model.FridgeData.AvarageFallPerMinute">
+                        <span class="input-group-text">°C per min</span>
+                    </div>
+                    <!-- RISE RATE -->
+                    <div class="input-group mb-3">
+                        <span style="width: 33%" class="input-group-text" id="basic-addon3">Rise ratio</span>
+                        <input style="width: 70px;" type="text" class="form-control" 
+                               id="temp_fall" aria-describedby="basic-addon3" value="@Model.FridgeData.AvarageRisePerMinute">
+                        <span class="input-group-text">°C per min</span>
+                    </div>
+                    <div style="text-align: left">
+                        <button onclick="calculateVariables()" class="btn btn-outline-danger">Get From Graph</button>
+                    </div>
+                    <div style="text-align: right">
+                        <button onclick="saveVariables()" class="btn btn-outline-success">Save</button>
+                    </div>
+                </div>
+
+               
+            </div>
+        </div>
+    </div>
+    
+</div>
+<!-- BOTTOM ROW -->
+@* <div style="width: 100vw; display: flex; height: 50vh">
+    <div style="width: 50%; height: 100%">
+    </div>
+    <div style="width: 50%;height: 100%">
+    </div>
+</div> *@
+
+<script>
+
+    Date.prototype.addHours = function (h) {
+        this.setTime(this.getTime() + (h * 60 * 60 * 1000));
+        return new Date(this);
+    }
+
+    function backToMain(){
+        window.location.href = "/";
+    }
+
+
+    // TEMP/KWH GRAPH
+
+    let dataGrouping = 4;
+
+    const range_hours = 6;
+
+    const main_chart = document.getElementById("mainChart")
+    const prices_chart = document.getElementById("pricesChart")
+    const label_date = document.getElementById("date-h3");
+    const label_cost = document.getElementById("label_cost");
+
+    let without_endDate = new Date()
+    let chartElement = undefined;
+    let pricesChartElement = undefined;
+
+    getFridgeTelemetry(without_endDate, range_hours, chartElement);
+    getPrices(without_endDate, range_hours, pricesChartElement);
+    
+    function moveDates(back) {
+        if (back == true) {
+            without_endDate.addHours(-range_hours);
+            console.log(back);
+        } else{
+            without_endDate.addHours(range_hours);
+        }
+
+        getPrices(without_endDate, range_hours, pricesChartElement);
+        getFridgeTelemetry(without_endDate, range_hours, chartElement);
+    }
+
+    let selectedPoints = [];
+
+    function chartCallback(_label, _value, _date){
+        console.log(_date);
+        selectedPoints.push({ time: _label, value: _value, date: _date });
+
+        if(selectedPoints.length > 2){
+            selectedPoints.splice(0, 1);
+        }
+    }
+
+    async function calculateVariables() {
+        if(selectedPoints.length < 2){
+            alert("No period selected");
+        }
+
+        var body = {
+            TimePointA: selectedPoints[0],
+            TimePointB: selectedPoints[1],
+        }
+
+
+
+        // Get 10 minutes intervals
+        const response = await fetch('/Prices/GetPricesForDays', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+
+        const apiData = await response.json();
+    }
+
+
+    async function getPrices(endDate, range, chart) {
+        let _startDate = new Date(endDate.getTime() - range * 60 * 60 * 1000);
+        let _endDate = new Date(endDate);
+        let dates = [];
+        if (_endDate.getDay() != _startDate.getDay()) {
+            _startDate.setHours(12);
+            _endDate.setHours(12);
+            dates.push(_startDate);
+            dates.push(_endDate);
+        } else {
+            dates.push(_endDate);
+        }
+        var body = {
+            Dates: dates
+        }
+
+
+
+        // Get 10 minutes intervals
+        const response = await fetch('/Prices/GetPricesForDays', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+
+        const apiData = await response.json();
+        
+
+        let displayPrices = [];
+        let foundStart = false;
+        let foundEnd = false;
+
+        for (let i = 0; i < apiData.length; i++){
+            displayPrices.push(apiData[i]);
+            continue;
+
+            let pStart = new Date(apiData[i].timeStart);
+            let pEnd = new Date(apiData[i].timeEnd);
+            if(!foundStart){
+                if (pStart < startDate && pEnd > startDate) {
+                    foundStart = true;
+                }
+            }
+
+            if(!foundEnd){
+                if (pStart > endDate) {
+                    foundEnd = true;
+                    break;
+                }
+            }
+
+            if(foundStart && !foundEnd){
+                displayPrices.push(apiData[i]);
+            }
+           
+        }
+
+
+
+        //
+        // DISPLAY PRICES CHART
+        //
+
+        let labels = [];
+        let prices = [];
+        let savedDay = 0;
+
+        for (let i = 0; i < displayPrices.length; i++) {
+            let start = new Date(displayPrices[i].timeStart);
+
+            if (i == 0 || i == displayPrices.length - 2 || start.getDay() != savedDay) {
+         
+                labels.push(displayFormattedDate(start));
+            } else {
+
+                labels.push(displayFormattedTime(start));
+            }
+            prices.push(displayPrices[i].dkk);      
+            savedDay = start.getDay();
+        }
+
+       
+        const chartData = {
+            labels: labels,
+            datasets: [{
+                label: 'Price',
+                data: prices,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            }
+            ]
+        };
+
+
+
+        if (chart == undefined) {
+            pricesChartElement = initiateLineChart(prices_chart, chartData, chartCallback);
+        } else {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = prices;
+            chart.update();
+        }
+    }
+
+    async function getFridgeTelemetry(endDate, range, chart) {
+        let startDate = new Date(endDate.getTime() - range * 60 * 60 * 1000);
+        let hidden = document.getElementById("DeviceId");
+        let _deviceId = "NONE";
+        if(hidden){
+            _deviceId = hidden.value;
+        }
+        var body = { DeviceId: _deviceId,
+                     StartDate: startDate,
+                     EndDate: endDate,
+                     GroupingInterval: dataGrouping }
+
+        // Get 10 minutes intervals
+        const response = await fetch('/Telemetry/GetFridgeTelemetry', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+
+        const apiData = await response.json();
+
+
+        let labels = [];
+        let iData = [];
+        let kwh = [];
+        let cost = [];
+        let prices = [];
+        let savedDay = 0;
+
+        for(let i = 0; i < apiData.temperatureData.length; i++){
+            let start = new Date(apiData.temperatureData[i].intervalStart);
+            if (i == 0 || i == apiData.temperatureData.length - 2 || start.getDay() != savedDay) {
+                labels.push(displayFormattedDate(start));
+            } else {
+
+                labels.push(displayFormattedTime(start));
+            }
+            iData.push(apiData.temperatureData[i].avarageIntervalTemperature);
+            kwh.push(apiData.temperatureData[i].kwhDelta);
+            cost.push(apiData.temperatureData[i].costInDkk);
+
+            savedDay = start.getDay();
+        }
+
+        // apiData.temperatureData.forEach(interval => {
+        //     let start = new Date(interval.intervalStart);
+        //     labels.push(formatTimeElement(start.getHours()) + ":" + formatTimeElement(start.getMinutes()));
+        //     iData.push(interval.avarageIntervalTemperature);
+        //     kwh.push(interval.kwhDelta);
+        //     cost.push(interval.costInDkk);
+        // });
+
+
+       
+
+        const chartData = {
+            labels: labels,
+            datasets: [{
+                label: 'Temperature',
+                data: iData,
+                fill: true,
+                borderColor: 'rgba(75, 192, 192, 0.8)',
+                tension: 0.1
+            }, {
+                label: 'Kwh usage',
+                data: kwh,
+                fill: true,
+                borderColor: 'rgba(0, 192, 0, 0.8)',
+                tension: 0.1
+            }
+            ]
+        };
+
+  
+
+        if (chart == undefined) {
+            chartElement = initiateLineChart(main_chart, chartData, chartCallback);
+        } else {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = iData;
+            chart.data.datasets[1].data = kwh;
+            chart.update();
+        }
+
+
+        label_date.innerHTML = "Start Date: " + displayFormattedDate(startDate);
+
+    }
+
+    
+
+        function formatLabelDate(date) {
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatIntervalLabel(startDate, endDate){
+            let s_hours = startDate.getHours() > 9 ? startDate.getHours() : "0" + startDate.getHours();
+            let s_mins = startDate.getMinutes() > 9 ? startDate.getMinutes() : "0" + startDate.getMinutes();
+            let e_hours = endDate.getHours() > 9 ? endDate.getHours() : "0" + endDate.getHours();
+            let e_mins = endDate.getMinutes() > 9 ? endDate.getMinutes() : "0" + endDate.getMinutes();
+
+
+            return s_hours + ":" + s_mins + " - " + e_hours + ":" + e_mins;
+        }
+
+    function displayFormattedTime(date) {
+        const pad = (num) => String(num).padStart(2, '0');      
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+
+        return `${hours}:${minutes}`;
+    }
+
+    function displayFormattedDate(date) {
+     
+            const pad = (num) => String(num).padStart(2, '0');
+
+            const year = date.getFullYear();
+            const month = pad(date.getMonth() + 1); // Months are 0-indexed
+            const day = pad(date.getDate());
+            const hours = pad(date.getHours());
+            const minutes = pad(date.getMinutes());
+
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
+
+    async function saveTempData(){
+
+        let _minTemp = document.getElementById('min_temp').value;
+        let _maxTemp = document.getElementById('max_temp').value;
+        let _targetTemp = document.getElementById('target_temp').value;
+
+        let hidden = document.getElementById("DeviceId");
+        let _deviceId = "NONE";
+        if (hidden) {
+            _deviceId = hidden.value;
+        }
+
+        var body = {
+            DeviceId: _deviceId,
+            TargetTemp: _targetTemp,
+            MinTemp: _minTemp,
+            MaxTemp: _maxTemp
+        }
+
+
+        // Get 10 minutes intervals
+        const response = await fetch('/TelemetryExtra/SaveTempData', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+
+    }
+
+    async function saveVariables(){
+        let rise = document.getElementById('temp_rise').value;
+        let fall = document.getElementById('temp_fall').value;
+
+        let hidden = document.getElementById("DeviceId");
+        let _deviceId = "NONE";
+        if (hidden) {
+            _deviceId = hidden.value;
+        }
+
+        var body = {
+            DeviceId: _deviceId,
+            FallRatio: fall,
+            RiseRatio: rise
+        }
+
+
+        // Get 10 minutes intervals
+        const response = await fetch('/TelemetryExtra/SaveVariables', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.status == 200) {
+
+        }
+        else {
+
+        }
+    }
+
+
+</script>

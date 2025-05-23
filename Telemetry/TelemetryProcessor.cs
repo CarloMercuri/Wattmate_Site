@@ -63,6 +63,7 @@ namespace Wattmate_Site.Telemetry
                     t.IntervalEnd = t.IntervalStart.AddMinutes(request.GroupingInterval);
                     t.AvarageIntervalTemperature = DBUtils.FetchAsFloat(row["AvgTemperature"]);
                     t.KwhDelta = DBUtils.FetchAsInt32(row["TotalKwhDelta"]);
+                   
                 }
  
                 

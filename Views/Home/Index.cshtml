@@ -18,7 +18,7 @@
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-primary">Edit</button>
                             <button onclick="goTelemetry('@device.DeviceId')" class="btn btn-sm btn-secondary">Telemetry</button>
-                            <button onclick="goOptions('@device.DeviceId')" class="btn btn-sm btn-danger">Options</button>
+                            <button onclick="goTelemetryExtra('@device.DeviceId')" class="btn btn-sm btn-danger">Extra</button>
                             @if (device.Online)
                             {
                                 <button class="btn btn-sm btn-success">Online</button>
@@ -63,8 +63,8 @@
         window.location.href = "/Telemetry?DeviceId=" + deviceId;
     }
 
-    function goOptions(){
-        window.location.href = "/Options?DeviceId=" + deviceId;
+    function goTelemetryExtra(deviceId){
+        window.location.href = "/TelemetryExtra?DeviceId=" + deviceId;
     }
 
 
