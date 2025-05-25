@@ -148,3 +148,83 @@ function initiateBarChart(_chartElement, _data) {
     return costChartD;
 }
 
+function initiateMixedChart(_chartElement, _data, clickCallback) {
+    //
+    // COST CHART
+    //
+    
+
+
+    const mixedChart = new Chart(_chartElement, {
+        type: 'bar',
+        data: _data,
+        options: {
+            responsive: true,
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const label = mixedChart.data.labels[index];
+                    const value = mixedChart.data.datasets[0].data[index];
+
+                    // Add if not already added
+                    if (!verticalLines.includes(label)) {
+                        verticalLines.push(label);
+                        if (verticalLines.length > 2) {
+                            verticalLines.splice(0, 1);
+                        }
+                        mixedChart.update();
+                    }
+                    if (clickCallback !== undefined) {
+                        // hack
+                        let seekIndex = index;
+                        let _date = "";
+                        while (seekIndex >= 0) {
+                            if (seekIndex < 0) break;
+                            if (mixedChart.data.labels[seekIndex].length > 8) {
+                                _date = mixedChart.data.labels[seekIndex];
+                                break;
+                            }
+                            seekIndex--;
+                        }
+                        clickCallback(label, value, _date);
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: '',
+                        font: {
+                            padding: 4,
+                            size: 20,
+                            weight: 'bold',
+                            family: 'Arial'
+                        },
+                        color: 'darkblue'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: '',
+                        font: {
+                            size: 20,
+                            weight: 'bold',
+                            family: 'Arial'
+                        },
+                        color: 'darkblue'
+                    },
+                    beginAtZero: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Values',
+                    }
+                }
+            }
+        }
+    });
+
+    return mixedChart;
+}
+

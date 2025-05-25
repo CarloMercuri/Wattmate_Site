@@ -25,6 +25,7 @@ namespace Wattmate_Site.Controllers
 
             model.FridgeData = _deviceProcessor.GetFridgeData(deviceId);
 
+
             return View(model);
         }
 

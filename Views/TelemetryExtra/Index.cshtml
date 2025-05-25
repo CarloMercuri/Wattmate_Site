@@ -17,14 +17,22 @@
                 <div class="card-body">
                     <h3 id="date-h3">Start date: 2025-05-09 14:05</h3>
                     <div style="display: flex; width: 100%; justify-content: center;">
-                        <button onclick="moveDates(true);" class="btn btn-sm btn-primary me-2">Tilbage</button>
-                        <button onclick="moveDates(false);" class="btn btn-sm btn-primary me-2">Frem</button>
+                        <div>
+                            <div class="d-inline-flex">
+                                 <button onclick="moveDates(true);" class="btn btn-sm btn-primary me-2">Tilbage</button>
+                                 <button onclick="moveDates(false);" class="btn btn-sm btn-primary me-2">Frem</button>
+                            </div>
+                            <!-- Date -->
+                                <div class="form-group mb-3" style="width: 300px;">
+                                    <label for="target_date" class="form-label">Choose new Start date</label>
+                                    <input type="datetime-local" onchange=newStartDate(this.value) id="target_date" class="form-control" aria-label="Dato">
+                                </div>
+                                                    
+                           
+                        </div>
+                      
                     </div>
-                    <!-- Date -->
-                    <div class="form-group mb-3">
-                        <label for="target_date" class="form-label">Dato</label>
-                        <input type="date" id="target_date" class="form-control" aria-label="Dato">
-                    </div>
+                   
                 </<div>
             </div>
         </div>
@@ -139,6 +147,12 @@
 
     getFridgeTelemetry(without_endDate, range_hours, chartElement);
     getPrices(without_endDate, range_hours, pricesChartElement);
+
+    function newStartDate(newDate) {
+        without_endDate = new Date(newDate);
+        getPrices(without_endDate, range_hours, pricesChartElement);
+        getFridgeTelemetry(without_endDate, range_hours, chartElement);
+    }
     
     function moveDates(back) {
         if (back == true) {
@@ -338,7 +352,7 @@
                      GroupingInterval: dataGrouping }
 
         // Get 10 minutes intervals
-        const response = await fetch('/Telemetry/GetFridgeTelemetry', {
+        const response = await fetch('/Telemetry/GetFridgeTelemetryBarKwh', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -392,16 +406,19 @@
         const chartData = {
             labels: labels,
             datasets: [{
-                label: 'Temperature',
+                type: 'line',
+                label: 'Temperature',                
                 data: iData,
                 fill: true,
                 borderColor: 'rgba(75, 192, 192, 0.8)',
                 tension: 0.1
             }, {
-                label: 'Kwh usage',
+                label: 'Active',
+                type: 'bar',
                 data: kwh,
-                fill: true,
-                borderColor: 'rgba(0, 192, 0, 0.8)',
+                fill: false,
+                backgroundColor: 'rgba(0,255,0,0.4)',
+                borderColor: 'rgba(255, 192, 0, 0.8)',
                 tension: 0.1
             }
             ]
@@ -410,7 +427,7 @@
   
 
         if (chart == undefined) {
-            chartElement = initiateLineChart(main_chart, chartData, chartCallback);
+            chartElement = initiateMixedChart(main_chart, chartData, chartCallback);
         } else {
             chart.data.labels = labels;
             chart.data.datasets[0].data = iData;
